@@ -1,7 +1,9 @@
 
 import 'package:flutter/material.dart';
+
 import 'constants/app_constants.dart';
 import 'constants/app_theme.dart';
+import 'screens/home/home_screen.dart';
 
 class ApoTechApp extends StatelessWidget {
   const ApoTechApp({super.key});
@@ -12,17 +14,7 @@ class ApoTechApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       title: AppConstants.appName,
       theme: AppTheme.lightTheme,
-      home: const Scaffold(
-        body: Center(
-          child: Text(
-            'ApoTech',
-            style: TextStyle(
-              fontSize: 28,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-        ),
-      ),
+      home: const HomeScreen(),
     );
   }
 }
