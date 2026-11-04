@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 
 import 'home/home_screen.dart';
 import 'medicines/medicine_list_screen.dart';
+import 'medicines/favorite_screen.dart';
 
 class MainNavigationScreen extends StatefulWidget {
   const MainNavigationScreen({super.key});
@@ -19,6 +20,7 @@ class _MainNavigationScreenState
   final List<Widget> pages = const [
     HomeScreen(),
     MedicineListScreen(),
+    FavoriteScreen(),
   ];
 
   @override
@@ -49,6 +51,11 @@ class _MainNavigationScreenState
                       icon: Icon(Icons.medication_outlined),
                       selectedIcon: Icon(Icons.medication),
                       label: Text('Katalog'),
+                    ),
+                    NavigationRailDestination(
+                      icon: Icon(Icons.star_border),
+                      selectedIcon: Icon(Icons.star),
+                      label: Text('Tersimpan'),
                     ),
                   ],
                 ),
@@ -86,6 +93,11 @@ class _MainNavigationScreenState
                 icon: Icon(Icons.medication_outlined),
                 selectedIcon: Icon(Icons.medication),
                 label: 'Katalog',
+              ),
+              NavigationDestination(
+                icon: Icon(Icons.star_border),
+                selectedIcon: Icon(Icons.star),
+                label: 'Tersimpan',
               ),
             ],
           ),

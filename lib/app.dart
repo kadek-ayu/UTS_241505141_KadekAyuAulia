@@ -1,10 +1,11 @@
-
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import 'constants/app_constants.dart';
 import 'constants/app_theme.dart';
 import 'providers/medicine_provider.dart';
+import 'providers/openfda_provider.dart';
+import 'providers/favorite_provider.dart';
 import 'screens/main_navigation_screen.dart';
 
 class ApoTechApp extends StatelessWidget {
@@ -12,8 +13,18 @@ class ApoTechApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ChangeNotifierProvider(
-      create: (_) => MedicineProvider()..loadMedicines(),
+    return MultiProvider(
+      providers: [
+        ChangeNotifierProvider(
+          create: (_) => MedicineProvider()..loadMedicines(),
+        ),
+        ChangeNotifierProvider(
+          create: (_) => OpenFdaProvider(),
+        ),
+        ChangeNotifierProvider(
+          create: (_) => FavoriteProvider(),
+        ),
+      ],
       child: MaterialApp(
         debugShowCheckedModeBanner: false,
         title: AppConstants.appName,
