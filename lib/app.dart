@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 
 import 'constants/app_constants.dart';
 import 'constants/app_theme.dart';
-import 'screens/home/home_screen.dart';
+import 'screens/main_navigation_screen.dart';
 
 class ApoTechApp extends StatelessWidget {
   const ApoTechApp({super.key});
@@ -14,7 +14,7 @@ class ApoTechApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       title: AppConstants.appName,
       theme: AppTheme.lightTheme,
-      home: const HomeScreen(),
+      home: const MainNavigationScreen(),
     );
   }
 }

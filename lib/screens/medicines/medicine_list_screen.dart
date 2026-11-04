@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 
 import '../../constants/app_theme.dart';
 import '../../models/medicine.dart';
+import 'medicine_detail_screen.dart';
 
 class MedicineListScreen extends StatefulWidget {
   const MedicineListScreen({super.key});
@@ -56,9 +57,95 @@ class _MedicineListScreenState extends State<MedicineListScreen> {
       final category = medicine.category.toLowerCase();
       final query = searchQuery.toLowerCase();
 
-      return name.contains(query) ||
-          category.contains(query);
+      return name.contains(query) || category.contains(query);
     }).toList();
+  }
+
+  void _openDetail(Medicine medicine) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => MedicineDetailScreen(
+          medicine: medicine,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildMedicineCard(Medicine medicine) {
+    return Card(
+      elevation: 1,
+      color: Colors.white,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(14),
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: () => _openDetail(medicine),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Row(
+            children: [
+              Container(
+                width: 48,
+                height: 48,
+                decoration: BoxDecoration(
+                  color: AppTheme.blueAccent,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Icon(
+                  Icons.medication_outlined,
+                  color: AppTheme.primaryColor,
+                ),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      medicine.name,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      medicine.category,
+                      style: const TextStyle(
+                        color: AppTheme.primaryColor,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      medicine.description,
+                      style: TextStyle(
+                        color: Colors.grey.shade600,
+                        fontSize: 13,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      'Kemasan: ${medicine.packaging} '
+                      '| Stok: ${medicine.stock}',
+                      style: const TextStyle(
+                        fontSize: 12,
+                        color: Colors.black54,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const Icon(
+                Icons.chevron_right,
+                color: Colors.grey,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 
   @override
@@ -111,79 +198,35 @@ class _MedicineListScreenState extends State<MedicineListScreen> {
                         style: TextStyle(color: Colors.grey),
                       ),
                     )
-                  : ListView.separated(
-                      itemCount: displayedMedicines.length,
-                      separatorBuilder: (context, index) =>
-                          const SizedBox(height: 12),
-                      itemBuilder: (context, index) {
-                        final medicine = displayedMedicines[index];
-
-                        return Card(
-                          elevation: 1,
-                          color: Colors.white,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(14),
-                          ),
-                          child: Padding(
-                            padding: const EdgeInsets.all(16),
-                            child: Row(
-                              children: [
-                                Container(
-                                  width: 48,
-                                  height: 48,
-                                  decoration: BoxDecoration(
-                                    color: AppTheme.blueAccent,
-                                    borderRadius:
-                                        BorderRadius.circular(12),
-                                  ),
-                                  child: const Icon(
-                                    Icons.medication_outlined,
-                                    color: AppTheme.primaryColor,
-                                  ),
-                                ),
-                                const SizedBox(width: 14),
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        medicine.name,
-                                        style: const TextStyle(
-                                          fontWeight: FontWeight.bold,
-                                          fontSize: 16,
-                                        ),
-                                      ),
-                                      const SizedBox(height: 4),
-                                      Text(
-                                        medicine.category,
-                                        style: const TextStyle(
-                                          color: AppTheme.primaryColor,
-                                        ),
-                                      ),
-                                      const SizedBox(height: 6),
-                                      Text(
-                                        medicine.description,
-                                        style: TextStyle(
-                                          color: Colors.grey.shade600,
-                                          fontSize: 13,
-                                        ),
-                                      ),
-                                      const SizedBox(height: 6),
-                                      Text(
-                                        'Kemasan: ${medicine.packaging} '
-                                        '| Stok: ${medicine.stock}',
-                                        style: const TextStyle(
-                                          fontSize: 12,
-                                          color: Colors.black54,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ],
+                  : LayoutBuilder(
+                      builder: (context, constraints) {
+                        if (constraints.maxWidth >= 700) {
+                          return GridView.builder(
+                            itemCount: displayedMedicines.length,
+                            gridDelegate:
+                                const SliverGridDelegateWithMaxCrossAxisExtent(
+                              maxCrossAxisExtent: 450,
+                              mainAxisExtent: 150,
+                              crossAxisSpacing: 12,
+                              mainAxisSpacing: 12,
                             ),
-                          ),
+                            itemBuilder: (context, index) {
+                              return _buildMedicineCard(
+                                displayedMedicines[index],
+                              );
+                            },
+                          );
+                        }
+
+                        return ListView.separated(
+                          itemCount: displayedMedicines.length,
+                          separatorBuilder: (context, index) =>
+                              const SizedBox(height: 12),
+                          itemBuilder: (context, index) {
+                            return _buildMedicineCard(
+                              displayedMedicines[index],
+                            );
+                          },
                         );
                       },
                     ),
