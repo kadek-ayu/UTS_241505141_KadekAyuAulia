@@ -3,9 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../constants/app_theme.dart';
-import '../../models/medicine.dart';
-import '../../providers/medicine_provider.dart';
-import 'medicine_detail_screen.dart';
+import '../../models/openfda_product.dart';
+import '../../providers/openfda_provider.dart';
+import 'openfda_product_detail_screen.dart';
 
 class MedicineListScreen extends StatefulWidget {
   const MedicineListScreen({super.key});
@@ -18,18 +18,52 @@ class MedicineListScreen extends StatefulWidget {
 class _MedicineListScreenState extends State<MedicineListScreen> {
   String searchQuery = '';
 
-  void _openDetail(Medicine medicine) {
+  @override
+  void initState() {
+    super.initState();
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+
+      final provider = context.read<OpenFdaProvider>();
+
+      if (provider.products.isEmpty && !provider.isLoading) {
+        provider.loadProducts();
+      }
+    });
+  }
+
+  void _openDetail(OpenFdaProduct product) {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => MedicineDetailScreen(
-          medicine: medicine,
-        ),
+        builder: (context) =>
+            OpenFdaProductDetailScreen(product: product),
       ),
     );
   }
 
-  Widget _buildMedicineCard(Medicine medicine) {
+  List<OpenFdaProduct> _filterProducts(
+    List<OpenFdaProduct> products,
+  ) {
+    final query = searchQuery.toLowerCase();
+
+    if (query.isEmpty) {
+      return products;
+    }
+
+    return products.where((product) {
+      return product.brandName.toLowerCase().contains(query) ||
+          product.genericName.toLowerCase().contains(query) ||
+          product.manufacturer.toLowerCase().contains(query);
+    }).toList();
+  }
+
+  Widget _buildProductCard(OpenFdaProduct product) {
+    final displayName = product.brandName.isNotEmpty
+        ? product.brandName
+        : product.genericName;
+
     return Card(
       elevation: 1,
       color: Colors.white,
@@ -38,10 +72,11 @@ class _MedicineListScreenState extends State<MedicineListScreen> {
       ),
       clipBehavior: Clip.antiAlias,
       child: InkWell(
-        onTap: () => _openDetail(medicine),
+        onTap: () => _openDetail(product),
         child: Padding(
           padding: const EdgeInsets.all(16),
           child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Container(
                 width: 48,
@@ -61,42 +96,59 @@ class _MedicineListScreenState extends State<MedicineListScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      medicine.name,
+                      displayName.isNotEmpty
+                          ? displayName
+                          : 'Nama produk tidak tersedia',
                       style: const TextStyle(
                         fontWeight: FontWeight.bold,
                         fontSize: 16,
                       ),
                     ),
-                    const SizedBox(height: 4),
-                    Text(
-                      medicine.category,
-                      style: const TextStyle(
-                        color: AppTheme.primaryColor,
+                    if (product.genericName.isNotEmpty) ...[
+                      const SizedBox(height: 5),
+                      Text(
+                        'Nama generik: ${product.genericName}',
+                        style: const TextStyle(fontSize: 13),
                       ),
-                    ),
-                    const SizedBox(height: 6),
-                    Text(
-                      medicine.description,
-                      style: TextStyle(
-                        color: Colors.grey.shade600,
-                        fontSize: 13,
+                    ],
+                    if (product.manufacturer.isNotEmpty) ...[
+                      const SizedBox(height: 5),
+                      Text(
+                        'Produsen: ${product.manufacturer}',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Colors.grey.shade700,
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: 6),
-                    Text(
-                      'Kemasan: ${medicine.packaging} '
-                      '| Stok: ${medicine.stock}',
-                      style: const TextStyle(
-                        fontSize: 12,
-                        color: Colors.black54,
+                    ],
+                    if (product.dosageForm.isNotEmpty) ...[
+                      const SizedBox(height: 5),
+                      Text(
+                        'Bentuk sediaan: ${product.dosageForm}',
+                        style: const TextStyle(fontSize: 12),
                       ),
+                    ],
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        Text(
+                          'Lihat detail produk',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: AppTheme.primaryColor,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        const SizedBox(width: 4),
+                        const Icon(
+                          Icons.arrow_forward,
+                          size: 14,
+                          color: AppTheme.primaryColor,
+                        ),
+                      ],
                     ),
                   ],
                 ),
-              ),
-              const Icon(
-                Icons.chevron_right,
-                color: Colors.grey,
               ),
             ],
           ),
@@ -105,23 +157,111 @@ class _MedicineListScreenState extends State<MedicineListScreen> {
     );
   }
 
+  Widget _buildContent(OpenFdaProvider provider) {
+    if (provider.isLoading) {
+      return const Center(
+        child: CircularProgressIndicator(),
+      );
+    }
+
+    if (provider.errorMessage != null) {
+      return Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(
+              Icons.cloud_off_outlined,
+              size: 48,
+              color: Colors.grey,
+            ),
+            const SizedBox(height: 12),
+            Text(
+              provider.errorMessage!,
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 12),
+            ElevatedButton.icon(
+              onPressed: provider.loadProducts,
+              icon: const Icon(Icons.refresh),
+              label: const Text('Coba Lagi'),
+            ),
+          ],
+        ),
+      );
+    }
+
+    if (provider.products.isEmpty) {
+      return const Center(
+        child: Text('Belum ada data produk.'),
+      );
+    }
+
+    final filteredProducts = _filterProducts(provider.products);
+
+    if (filteredProducts.isEmpty) {
+      return const Center(
+        child: Text('Produk tidak ditemukan.'),
+      );
+    }
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        if (constraints.maxWidth >= 700) {
+          return GridView.builder(
+            itemCount: filteredProducts.length,
+            gridDelegate:
+                const SliverGridDelegateWithMaxCrossAxisExtent(
+              maxCrossAxisExtent: 450,
+              mainAxisExtent: 170,
+              crossAxisSpacing: 12,
+              mainAxisSpacing: 12,
+            ),
+            itemBuilder: (context, index) {
+              return _buildProductCard(
+                filteredProducts[index],
+              );
+            },
+          );
+        }
+
+        return ListView.separated(
+          itemCount: filteredProducts.length,
+          separatorBuilder: (context, index) =>
+              const SizedBox(height: 12),
+          itemBuilder: (context, index) {
+            return _buildProductCard(
+              filteredProducts[index],
+            );
+          },
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Consumer<MedicineProvider>(
+    return Consumer<OpenFdaProvider>(
       builder: (context, provider, child) {
-        final filteredMedicines = provider.medicines.where((medicine) {
-          final query = searchQuery.toLowerCase();
-
-          return medicine.name.toLowerCase().contains(query) ||
-              medicine.category.toLowerCase().contains(query);
-        }).toList();
+        final filteredProducts =
+            _filterProducts(provider.products);
 
         return Scaffold(
           appBar: AppBar(
             title: const Text(
               'Katalog Produk',
-              style: TextStyle(fontWeight: FontWeight.bold),
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+              ),
             ),
+            actions: [
+              IconButton(
+                tooltip: 'Muat Ulang Data',
+                icon: const Icon(Icons.refresh),
+                onPressed: provider.isLoading
+                    ? null
+                    : provider.loadProducts,
+              ),
+            ],
           ),
           body: Padding(
             padding: const EdgeInsets.all(16),
@@ -135,7 +275,7 @@ class _MedicineListScreenState extends State<MedicineListScreen> {
                     });
                   },
                   decoration: InputDecoration(
-                    hintText: 'Cari nama atau kategori produk...',
+                    hintText: 'Cari nama atau produsen produk...',
                     prefixIcon: const Icon(Icons.search),
                     filled: true,
                     fillColor: AppTheme.blueAccent,
@@ -145,9 +285,9 @@ class _MedicineListScreenState extends State<MedicineListScreen> {
                     ),
                   ),
                 ),
-                const SizedBox(height: 20),
+                const SizedBox(height: 16),
                 Text(
-                  'Daftar Produk (${filteredMedicines.length})',
+                  'Data Produk OpenFDA (${filteredProducts.length})',
                   style: const TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
@@ -155,69 +295,21 @@ class _MedicineListScreenState extends State<MedicineListScreen> {
                 ),
                 const SizedBox(height: 12),
                 Expanded(
-                  child: _buildContent(
-                    provider,
-                    filteredMedicines,
+                  child: _buildContent(provider),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Sumber informasi: OpenFDA. '
+                  'Data ini merupakan informasi produk, '
+                  'bukan rekomendasi penggunaan obat.',
+                  style: TextStyle(
+                    fontSize: 11,
+                    color: Colors.grey.shade600,
                   ),
                 ),
               ],
             ),
           ),
-        );
-      },
-    );
-  }
-
-  Widget _buildContent(
-    MedicineProvider provider,
-    List<Medicine> medicines,
-  ) {
-    if (provider.isLoading) {
-      return const Center(
-        child: CircularProgressIndicator(),
-      );
-    }
-
-    if (provider.errorMessage != null) {
-      return Center(
-        child: Text(provider.errorMessage!),
-      );
-    }
-
-    if (medicines.isEmpty) {
-      return const Center(
-        child: Text(
-          'Produk tidak ditemukan.',
-          style: TextStyle(color: Colors.grey),
-        ),
-      );
-    }
-
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        if (constraints.maxWidth >= 700) {
-          return GridView.builder(
-            itemCount: medicines.length,
-            gridDelegate:
-                const SliverGridDelegateWithMaxCrossAxisExtent(
-              maxCrossAxisExtent: 450,
-              mainAxisExtent: 150,
-              crossAxisSpacing: 12,
-              mainAxisSpacing: 12,
-            ),
-            itemBuilder: (context, index) {
-              return _buildMedicineCard(medicines[index]);
-            },
-          );
-        }
-
-        return ListView.separated(
-          itemCount: medicines.length,
-          separatorBuilder: (context, index) =>
-              const SizedBox(height: 12),
-          itemBuilder: (context, index) {
-            return _buildMedicineCard(medicines[index]);
-          },
         );
       },
     );
