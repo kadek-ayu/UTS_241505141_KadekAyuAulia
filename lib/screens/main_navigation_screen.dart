@@ -5,6 +5,7 @@ import 'home/home_screen.dart';
 import 'medicines/medicine_list_screen.dart';
 import 'medicines/favorite_screen.dart';
 import 'cart/cart_screen.dart';
+import 'orders/order_history_screen.dart';
 
 class MainNavigationScreen extends StatefulWidget {
   const MainNavigationScreen({super.key});
@@ -23,6 +24,7 @@ class _MainNavigationScreenState
     MedicineListScreen(),
     FavoriteScreen(),
     CartScreen(),
+    OrderHistoryScreen(),
   ];
 
   @override
@@ -63,6 +65,11 @@ class _MainNavigationScreenState
                       icon: Icon(Icons.shopping_cart_outlined),
                       selectedIcon: Icon(Icons.shopping_cart),
                       label: Text('Keranjang'),
+                    ),
+                    NavigationRailDestination(
+                      icon: Icon(Icons.history_outlined),
+                      selectedIcon: Icon(Icons.history),
+                      label: Text('Riwayat'),
                     ),
                   ],
                 ),
@@ -110,6 +117,11 @@ class _MainNavigationScreenState
                 icon: Icon(Icons.shopping_cart_outlined),
                 selectedIcon: Icon(Icons.shopping_cart),
                 label: 'Keranjang',
+              ),
+              NavigationDestination(
+                icon: Icon(Icons.history_outlined),
+                selectedIcon: Icon(Icons.history),
+                label: 'Riwayat',
               ),
             ],
           ),

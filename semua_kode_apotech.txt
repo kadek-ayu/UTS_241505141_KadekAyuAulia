@@ -1,0 +1,3926 @@
+﻿
+
+// ===== FILE: C:\Users\putu\Desktop\project flutter\apotech_flutter_uts\lib\app.dart =====
+
+import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+
+import 'constants/app_constants.dart';
+import 'constants/app_theme.dart';
+import 'providers/medicine_provider.dart';
+import 'providers/openfda_provider.dart';
+import 'providers/favorite_provider.dart';
+import 'providers/cart_provider.dart';
+import 'providers/order_provider.dart';
+import 'screens/main_navigation_screen.dart';
+
+class ApoTechApp extends StatelessWidget {
+  const ApoTechApp({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return MultiProvider(
+      providers: [
+        ChangeNotifierProvider(
+          create: (_) => MedicineProvider()..loadMedicines(),
+        ),
+        ChangeNotifierProvider(
+          create: (_) => OpenFdaProvider(),
+        ),
+        ChangeNotifierProvider(
+          create: (_) => FavoriteProvider(),
+        ),
+        ChangeNotifierProvider(
+          create: (_) => CartProvider(),
+        ),
+        ChangeNotifierProvider(
+          create: (_) => OrderProvider(),
+        ),
+      ],
+      child: MaterialApp(
+        debugShowCheckedModeBanner: false,
+        title: AppConstants.appName,
+        theme: AppTheme.lightTheme,
+        home: const MainNavigationScreen(),
+      ),
+    );
+  }
+}
+
+
+
+// ===== FILE: C:\Users\putu\Desktop\project flutter\apotech_flutter_uts\lib\main.dart =====
+
+import 'package:flutter/material.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+
+import 'app.dart';
+
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  await Supabase.initialize(
+    url: 'https://qxcmokdvxsxnldwjymag.supabase.co',
+    publishableKey: 'sb_publishable_qMVxCmv2viF3gfewomBXnw_-_DmLTYV',
+  );
+
+  runApp(const ApoTechApp());
+}
+
+
+
+// ===== FILE: C:\Users\putu\Desktop\project flutter\apotech_flutter_uts\lib\constants\app_constants.dart =====
+
+class AppConstants {
+  static const String appName = 'ApoTech';
+  static const String appDescription =
+      'Aplikasi Teknologi Informasi Apotek';
+
+  static const String medicineTable = 'medicines';
+}
+
+
+
+// ===== FILE: C:\Users\putu\Desktop\project flutter\apotech_flutter_uts\lib\constants\app_theme.dart =====
+
+import 'package:flutter/material.dart';
+
+class AppTheme {
+  static const Color primaryColor = Color(0xFF7653B5);
+  static const Color secondaryColor = Color(0xFF8E72C7);
+  static const Color backgroundColor = Color(0xFFFFFFFF);
+  static const Color blueAccent = Color(0xFFDCEBFF);
+  static const Color paleYellow = Color(0xFFFFF2BF);
+
+  static ThemeData get lightTheme {
+    return ThemeData(
+      useMaterial3: true,
+      colorScheme: ColorScheme.fromSeed(
+        seedColor: primaryColor,
+        brightness: Brightness.light,
+      ),
+      scaffoldBackgroundColor: backgroundColor,
+      appBarTheme: const AppBarTheme(
+        backgroundColor: backgroundColor,
+        foregroundColor: primaryColor,
+        elevation: 0,
+        centerTitle: false,
+      ),
+      fontFamily: 'Roboto',
+    );
+  }
+}
+
+
+
+// ===== FILE: C:\Users\putu\Desktop\project flutter\apotech_flutter_uts\lib\models\medicine.dart =====
+
+class Medicine {
+  final int? id;
+  final String name;
+  final String category;
+  final String description;
+  final String packaging;
+  final int stock;
+  final DateTime? createdAt;
+
+  const Medicine({
+    this.id,
+    required this.name,
+    required this.category,
+    required this.description,
+    required this.packaging,
+    required this.stock,
+    this.createdAt,
+  });
+
+  factory Medicine.fromJson(Map<String, dynamic> json) {
+    return Medicine(
+      id: json['id'] as int?,
+      name: json['name'] as String,
+      category: json['category'] as String,
+      description: json['description'] as String,
+      packaging: json['packaging'] as String,
+      stock: json['stock'] as int,
+      createdAt: json['created_at'] == null
+          ? null
+          : DateTime.parse(json['created_at'] as String),
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'name': name,
+      'category': category,
+      'description': description,
+      'packaging': packaging,
+      'stock': stock,
+    };
+  }
+}
+
+
+
+// ===== FILE: C:\Users\putu\Desktop\project flutter\apotech_flutter_uts\lib\models\openfda_product.dart =====
+
+class OpenFdaProduct {
+  final String productNdc;
+  final String genericName;
+  final String brandName;
+  final String manufacturer;
+  final String dosageForm;
+  final String productType;
+  final List<String> routes;
+  final List<String> activeIngredients;
+
+  const OpenFdaProduct({
+    required this.productNdc,
+    required this.genericName,
+    required this.brandName,
+    required this.manufacturer,
+    required this.dosageForm,
+    required this.productType,
+    required this.routes,
+    required this.activeIngredients,
+  });
+
+  factory OpenFdaProduct.fromJson(Map<String, dynamic> json) {
+    final ingredients = json['active_ingredients'];
+
+    return OpenFdaProduct(
+      productNdc: json['product_ndc'] ?? '',
+      genericName: json['generic_name'] ?? '',
+      brandName: json['brand_name'] ?? '',
+      manufacturer: json['labeler_name'] ?? '',
+      dosageForm: json['dosage_form'] ?? '',
+      productType: json['product_type'] ?? '',
+      routes: json['route'] is List
+          ? List<String>.from(json['route'])
+          : [],
+      activeIngredients: ingredients is List
+          ? ingredients
+              .whereType<Map<String, dynamic>>()
+              .map((item) => item['name']?.toString() ?? '')
+              .where((name) => name.isNotEmpty)
+              .toList()
+          : [],
+    );
+  }
+}
+
+
+
+// ===== FILE: C:\Users\putu\Desktop\project flutter\apotech_flutter_uts\lib\models\order.dart =====
+
+class Order {
+  final int id;
+  final int pharmacyId;
+  final double totalPrice;
+  final String orderStatus;
+  final DateTime createdAt;
+
+  Order({
+    required this.id,
+    required this.pharmacyId,
+    required this.totalPrice,
+    required this.orderStatus,
+    required this.createdAt,
+  });
+
+  factory Order.fromJson(Map<String, dynamic> json) {
+    return Order(
+      id: (json['id'] as num).toInt(),
+      pharmacyId: (json['pharmacy_id'] as num).toInt(),
+      totalPrice: (json['total_price'] as num).toDouble(),
+      orderStatus: json['order_status'] as String,
+      createdAt: DateTime.parse(json['created_at'] as String),
+    );
+  }
+}
+
+
+
+// ===== FILE: C:\Users\putu\Desktop\project flutter\apotech_flutter_uts\lib\providers\cart_provider.dart =====
+
+import 'package:flutter/foundation.dart';
+
+class CartItem {
+  final int pharmacyId;
+  final String pharmacyName;
+  final int medicineId;
+  final String name;
+  final double price;
+  final int stockQuantity;
+  int quantity;
+
+  CartItem({
+    required this.pharmacyId,
+    required this.pharmacyName,
+    required this.medicineId,
+    required this.name,
+    required this.price,
+    required this.stockQuantity,
+    this.quantity = 1,
+  });
+
+  double get subtotal => price * quantity;
+}
+
+enum CartAddResult {
+  added,
+  differentPharmacy,
+  outOfStock,
+  insufficientStock,
+}
+
+class CartProvider extends ChangeNotifier {
+  final List<CartItem> _items = [];
+
+  int? _pharmacyId;
+  String? _pharmacyName;
+
+  List<CartItem> get items => List.unmodifiable(_items);
+
+  int? get pharmacyId => _pharmacyId;
+
+  String? get pharmacyName => _pharmacyName;
+
+  bool get isEmpty => _items.isEmpty;
+
+  int get itemCount {
+    return _items.fold(
+      0,
+      (total, item) => total + item.quantity,
+    );
+  }
+
+  double get totalPrice {
+    return _items.fold(
+      0,
+      (total, item) => total + item.subtotal,
+    );
+  }
+
+  CartAddResult addItem({
+    required int pharmacyId,
+    required String pharmacyName,
+    required int medicineId,
+    required String name,
+    required double price,
+    required int stockQuantity,
+  }) {
+    if (stockQuantity <= 0) {
+      return CartAddResult.outOfStock;
+    }
+
+    if (_items.isNotEmpty && _pharmacyId != pharmacyId) {
+      return CartAddResult.differentPharmacy;
+    }
+
+    final existingIndex = _items.indexWhere(
+      (item) => item.medicineId == medicineId,
+    );
+
+    if (existingIndex != -1) {
+      final existingItem = _items[existingIndex];
+
+      if (existingItem.quantity >= existingItem.stockQuantity) {
+        return CartAddResult.insufficientStock;
+      }
+
+      existingItem.quantity++;
+    } else {
+      _pharmacyId = pharmacyId;
+      _pharmacyName = pharmacyName;
+
+      _items.add(
+        CartItem(
+          pharmacyId: pharmacyId,
+          pharmacyName: pharmacyName,
+          medicineId: medicineId,
+          name: name,
+          price: price,
+          stockQuantity: stockQuantity,
+        ),
+      );
+    }
+
+    notifyListeners();
+    return CartAddResult.added;
+  }
+
+  bool increaseQuantity(int medicineId) {
+    final index = _items.indexWhere(
+      (item) => item.medicineId == medicineId,
+    );
+
+    if (index == -1) return false;
+
+    final item = _items[index];
+
+    if (item.quantity >= item.stockQuantity) {
+      return false;
+    }
+
+    item.quantity++;
+    notifyListeners();
+    return true;
+  }
+
+  bool decreaseQuantity(int medicineId) {
+    final index = _items.indexWhere(
+      (item) => item.medicineId == medicineId,
+    );
+
+    if (index == -1) return false;
+
+    final item = _items[index];
+
+    if (item.quantity > 1) {
+      item.quantity--;
+      notifyListeners();
+      return true;
+    }
+
+    return false;
+  }
+
+  void removeItem(int medicineId) {
+    _items.removeWhere(
+      (item) => item.medicineId == medicineId,
+    );
+
+    _resetPharmacyIfEmpty();
+    notifyListeners();
+  }
+
+  void clearCart() {
+    _items.clear();
+    _pharmacyId = null;
+    _pharmacyName = null;
+    notifyListeners();
+  }
+
+  void _resetPharmacyIfEmpty() {
+    if (_items.isEmpty) {
+      _pharmacyId = null;
+      _pharmacyName = null;
+    }
+  }
+}
+
+
+
+// ===== FILE: C:\Users\putu\Desktop\project flutter\apotech_flutter_uts\lib\providers\favorite_provider.dart =====
+import 'package:flutter/material.dart';
+
+import '../models/openfda_product.dart';
+
+class FavoriteProvider extends ChangeNotifier {
+  final Map<String, OpenFdaProduct> _favorites = {};
+
+  List<OpenFdaProduct> get favorites =>
+      _favorites.values.toList();
+
+  bool isFavorite(OpenFdaProduct product) {
+    return _favorites.containsKey(product.productNdc);
+  }
+
+  void toggleFavorite(OpenFdaProduct product) {
+    final productId = product.productNdc;
+
+    if (productId.isEmpty) {
+      return;
+    }
+
+    if (_favorites.containsKey(productId)) {
+      _favorites.remove(productId);
+    } else {
+      _favorites[productId] = product;
+    }
+
+    notifyListeners();
+  }
+
+  void removeFavorite(OpenFdaProduct product) {
+    _favorites.remove(product.productNdc);
+    notifyListeners();
+  }
+
+  void clearFavorites() {
+    _favorites.clear();
+    notifyListeners();
+  }
+}
+
+
+// ===== FILE: C:\Users\putu\Desktop\project flutter\apotech_flutter_uts\lib\providers\medicine_provider.dart =====
+
+import 'package:flutter/material.dart';
+
+import '../models/medicine.dart';
+import '../repositories/medicine_repository.dart';
+
+class MedicineProvider extends ChangeNotifier {
+  final MedicineRepository _repository;
+
+  MedicineProvider({
+    MedicineRepository? repository,
+  }) : _repository = repository ?? MedicineRepository();
+
+  List<Medicine> _medicines = [];
+  bool _isLoading = false;
+  String? _errorMessage;
+
+  List<Medicine> get medicines => _medicines;
+  bool get isLoading => _isLoading;
+  String? get errorMessage => _errorMessage;
+
+  Future<void> loadMedicines() async {
+    _isLoading = true;
+    _errorMessage = null;
+    notifyListeners();
+
+    try {
+      _medicines = await _repository.getMedicines();
+    } catch (error) {
+      _errorMessage = 'Gagal memuat data produk.';
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+}
+
+
+
+// ===== FILE: C:\Users\putu\Desktop\project flutter\apotech_flutter_uts\lib\providers\openfda_provider.dart =====
+
+import 'package:flutter/material.dart';
+
+import '../models/openfda_product.dart';
+import '../repositories/openfda_repository.dart';
+
+class OpenFdaProvider extends ChangeNotifier {
+  final OpenFdaRepository _repository;
+
+  OpenFdaProvider({
+    OpenFdaRepository? repository,
+  }) : _repository = repository ?? OpenFdaRepository();
+
+  List<OpenFdaProduct> _products = [];
+  bool _isLoading = false;
+  String? _errorMessage;
+
+  List<OpenFdaProduct> get products => _products;
+  bool get isLoading => _isLoading;
+  String? get errorMessage => _errorMessage;
+
+  Future<void> loadProducts() async {
+    _isLoading = true;
+    _errorMessage = null;
+    notifyListeners();
+
+    try {
+      _products = await _repository.getProducts();
+    } catch (error) {
+      _errorMessage = 'Gagal memuat data dari OpenFDA.';
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+}
+
+
+
+// ===== FILE: C:\Users\putu\Desktop\project flutter\apotech_flutter_uts\lib\providers\order_provider.dart =====
+
+import 'package:flutter/foundation.dart';
+
+import '../services/order_service.dart';
+import 'cart_provider.dart';
+
+class OrderProvider extends ChangeNotifier {
+  final OrderService _orderService = OrderService();
+
+  bool _isLoading = false;
+  String? _errorMessage;
+  Map<String, dynamic>? _lastOrder;
+  List<Map<String, dynamic>> _orders = [];
+
+  bool get isLoading => _isLoading;
+  String? get errorMessage => _errorMessage;
+  Map<String, dynamic>? get lastOrder => _lastOrder;
+  List<Map<String, dynamic>> get orders =>
+      List.unmodifiable(_orders);
+
+  Future<bool> createOrder(CartProvider cart) async {
+    if (_isLoading) return false;
+
+    _isLoading = true;
+    _errorMessage = null;
+    notifyListeners();
+
+    try {
+      _lastOrder = await _orderService.createOrder(
+        cart: cart,
+      );
+
+      return true;
+    } catch (error) {
+      _errorMessage = error.toString();
+      return false;
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  Future<void> loadOrders() async {
+    _isLoading = true;
+    _errorMessage = null;
+    notifyListeners();
+
+    try {
+      _orders = await _orderService.getOrders();
+    } catch (error) {
+      _errorMessage = error.toString();
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+}
+
+
+
+// ===== FILE: C:\Users\putu\Desktop\project flutter\apotech_flutter_uts\lib\repositories\medicine_repository.dart =====
+
+import '../models/medicine.dart';
+import '../services/local_medicine_service.dart';
+
+class MedicineRepository {
+  final LocalMedicineService _service;
+
+  MedicineRepository({
+    LocalMedicineService? service,
+  }) : _service = service ?? LocalMedicineService();
+
+  Future<List<Medicine>> getMedicines() {
+    return _service.getMedicines();
+  }
+}
+
+
+
+// ===== FILE: C:\Users\putu\Desktop\project flutter\apotech_flutter_uts\lib\repositories\openfda_repository.dart =====
+
+import '../models/openfda_product.dart';
+import '../services/openfda_service.dart';
+
+class OpenFdaRepository {
+  final OpenFdaService _service;
+
+  OpenFdaRepository({
+    OpenFdaService? service,
+  }) : _service = service ?? OpenFdaService();
+
+  Future<List<OpenFdaProduct>> getProducts() {
+    return _service.getProducts();
+  }
+}
+
+
+
+// ===== FILE: C:\Users\putu\Desktop\project flutter\apotech_flutter_uts\lib\screens\main_navigation_screen.dart =====
+
+import 'package:flutter/material.dart';
+
+import 'home/home_screen.dart';
+import 'medicines/medicine_list_screen.dart';
+import 'medicines/favorite_screen.dart';
+import 'cart/cart_screen.dart';
+
+class MainNavigationScreen extends StatefulWidget {
+  const MainNavigationScreen({super.key});
+
+  @override
+  State<MainNavigationScreen> createState() =>
+      _MainNavigationScreenState();
+}
+
+class _MainNavigationScreenState
+    extends State<MainNavigationScreen> {
+  int selectedIndex = 0;
+
+  final List<Widget> pages = const [
+    HomeScreen(),
+    MedicineListScreen(),
+    FavoriteScreen(),
+    CartScreen(),
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final isWideScreen = constraints.maxWidth >= 800;
+
+        if (isWideScreen) {
+          return Scaffold(
+            body: Row(
+              children: [
+                NavigationRail(
+                  selectedIndex: selectedIndex,
+                  onDestinationSelected: (index) {
+                    setState(() {
+                      selectedIndex = index;
+                    });
+                  },
+                  labelType: NavigationRailLabelType.all,
+                  destinations: const [
+                    NavigationRailDestination(
+                      icon: Icon(Icons.home_outlined),
+                      selectedIcon: Icon(Icons.home),
+                      label: Text('Home'),
+                    ),
+                    NavigationRailDestination(
+                      icon: Icon(Icons.medication_outlined),
+                      selectedIcon: Icon(Icons.medication),
+                      label: Text('Katalog'),
+                    ),
+                    NavigationRailDestination(
+                      icon: Icon(Icons.star_border),
+                      selectedIcon: Icon(Icons.star),
+                      label: Text('Tersimpan'),
+                    ),
+                    NavigationRailDestination(
+                      icon: Icon(Icons.shopping_cart_outlined),
+                      selectedIcon: Icon(Icons.shopping_cart),
+                      label: Text('Keranjang'),
+                    ),
+                  ],
+                ),
+                const VerticalDivider(width: 1),
+                Expanded(
+                  child: IndexedStack(
+                    index: selectedIndex,
+                    children: pages,
+                  ),
+                ),
+              ],
+            ),
+          );
+        }
+
+        return Scaffold(
+          body: IndexedStack(
+            index: selectedIndex,
+            children: pages,
+          ),
+          bottomNavigationBar: NavigationBar(
+            selectedIndex: selectedIndex,
+            onDestinationSelected: (index) {
+              setState(() {
+                selectedIndex = index;
+              });
+            },
+            destinations: const [
+              NavigationDestination(
+                icon: Icon(Icons.home_outlined),
+                selectedIcon: Icon(Icons.home),
+                label: 'Home',
+              ),
+              NavigationDestination(
+                icon: Icon(Icons.medication_outlined),
+                selectedIcon: Icon(Icons.medication),
+                label: 'Katalog',
+              ),
+              NavigationDestination(
+                icon: Icon(Icons.star_border),
+                selectedIcon: Icon(Icons.star),
+                label: 'Tersimpan',
+              ),
+              NavigationDestination(
+                icon: Icon(Icons.shopping_cart_outlined),
+                selectedIcon: Icon(Icons.shopping_cart),
+                label: 'Keranjang',
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+}
+
+
+
+// ===== FILE: C:\Users\putu\Desktop\project flutter\apotech_flutter_uts\lib\screens\openfda_test_screen.dart =====
+import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+
+import '../providers/openfda_provider.dart';
+
+class OpenFdaTestScreen extends StatelessWidget {
+  const OpenFdaTestScreen({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Pengujian OpenFDA'),
+      ),
+      body: Consumer<OpenFdaProvider>(
+        builder: (context, provider, child) {
+          return Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                const Text(
+                  'Pengujian REST API OpenFDA',
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                const Text(
+                  'Tekan tombol untuk mengambil data produk '
+                  'dari OpenFDA.',
+                ),
+                const SizedBox(height: 16),
+                ElevatedButton.icon(
+                  onPressed: provider.isLoading
+                      ? null
+                      : () => provider.loadProducts(),
+                  icon: const Icon(Icons.cloud_download),
+                  label: const Text('Uji Koneksi OpenFDA'),
+                ),
+                const SizedBox(height: 16),
+                if (provider.isLoading)
+                  const Expanded(
+                    child: Center(
+                      child: CircularProgressIndicator(),
+                    ),
+                  )
+                else if (provider.errorMessage != null)
+                  Expanded(
+                    child: Center(
+                      child: Text(provider.errorMessage!),
+                    ),
+                  )
+                else if (provider.products.isEmpty)
+                  const Expanded(
+                    child: Center(
+                      child: Text(
+                        'Belum ada data. Tekan tombol pengujian.',
+                      ),
+                    ),
+                  )
+                else
+                  Expanded(
+                    child: ListView.builder(
+                      itemCount: provider.products.length,
+                      itemBuilder: (context, index) {
+                        final product = provider.products[index];
+
+                        return Card(
+                          margin: const EdgeInsets.only(bottom: 12),
+                          child: ListTile(
+                            title: Text(
+                              product.brandName.isNotEmpty
+                                  ? product.brandName
+                                  : product.genericName,
+                            ),
+                            subtitle: Text(
+                              'Nama generik: ${product.genericName}\n'
+                              'Produsen: ${product.manufacturer}\n'
+                              'NDC: ${product.productNdc}',
+                            ),
+                            isThreeLine: true,
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+              ],
+            ),
+          );
+        },
+      ),
+    );
+  }
+}
+
+
+// ===== FILE: C:\Users\putu\Desktop\project flutter\apotech_flutter_uts\lib\screens\cart\cart_screen.dart =====
+
+import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+
+import '../../providers/cart_provider.dart';
+import 'checkout_screen.dart';
+
+class CartScreen extends StatelessWidget {
+  const CartScreen({super.key});
+
+  String _formatPrice(double price) {
+    return 'Rp ${price.toStringAsFixed(0)}';
+  }
+
+  Future<void> _confirmRemove(
+    BuildContext context,
+    CartProvider cart,
+    int medicineId,
+    String medicineName,
+  ) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          title: const Text('Hapus Produk'),
+          content: Text(
+            'Apakah kamu yakin ingin menghapus $medicineName '
+            'dari keranjang?',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.pop(dialogContext, false);
+              },
+              child: const Text('Batal'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.pop(dialogContext, true);
+              },
+              child: const Text('Hapus'),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (confirmed == true) {
+      cart.removeItem(medicineId);
+
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('$medicineName berhasil dihapus.'),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Keranjang'),
+      ),
+      body: Consumer<CartProvider>(
+        builder: (context, cart, child) {
+          if (cart.isEmpty) {
+            return const Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.shopping_cart_outlined,
+                    size: 75,
+                    color: Colors.grey,
+                  ),
+                  SizedBox(height: 16),
+                  Text(
+                    'Keranjang masih kosong',
+                    style: TextStyle(
+                      fontSize: 17,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  SizedBox(height: 8),
+                  Text(
+                    'Tambahkan produk dari apotek terlebih dahulu.',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      color: Colors.black54,
+                      fontSize: 13,
+                    ),
+                  ),
+                ],
+              ),
+            );
+          }
+
+          return Column(
+            children: [
+              Expanded(
+                child: ListView(
+                  padding: const EdgeInsets.all(16),
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: Colors.green.shade50,
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(
+                            Icons.local_pharmacy,
+                            color: Colors.green,
+                            size: 28,
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment:
+                                  CrossAxisAlignment.start,
+                              children: [
+                                const Text(
+                                  'Apotek pilihan',
+                                  style: TextStyle(
+                                    color: Colors.black54,
+                                    fontSize: 12,
+                                  ),
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  cart.pharmacyName ?? '-',
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 15,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+
+                    const SizedBox(height: 20),
+
+                    Row(
+                      mainAxisAlignment:
+                          MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text(
+                          'Produk dalam Keranjang',
+                          style: TextStyle(
+                            fontSize: 17,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        Text(
+                          '${cart.itemCount} produk',
+                          style: const TextStyle(
+                            color: Colors.black54,
+                            fontSize: 12,
+                          ),
+                        ),
+                      ],
+                    ),
+
+                    const SizedBox(height: 12),
+
+                    ...cart.items.map((item) {
+                      return Card(
+                        margin: const EdgeInsets.only(bottom: 12),
+                        elevation: 0,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14),
+                          side: BorderSide(
+                            color: Colors.grey.shade200,
+                          ),
+                        ),
+                        child: Padding(
+                          padding: const EdgeInsets.all(14),
+                          child: Column(
+                            crossAxisAlignment:
+                                CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                crossAxisAlignment:
+                                    CrossAxisAlignment.start,
+                                children: [
+                                  Container(
+                                    padding:
+                                        const EdgeInsets.all(12),
+                                    decoration: BoxDecoration(
+                                      color: Colors.green.shade50,
+                                      borderRadius:
+                                          BorderRadius.circular(12),
+                                    ),
+                                    child: const Icon(
+                                      Icons.medical_services_outlined,
+                                      color: Colors.green,
+                                      size: 26,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 12),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          item.name,
+                                          style: const TextStyle(
+                                            fontWeight:
+                                                FontWeight.bold,
+                                            fontSize: 14,
+                                          ),
+                                        ),
+                                        const SizedBox(height: 5),
+                                        Text(
+                                          _formatPrice(item.price),
+                                          style: const TextStyle(
+                                            color: Colors.green,
+                                            fontWeight:
+                                                FontWeight.bold,
+                                          ),
+                                        ),
+                                        const SizedBox(height: 4),
+                                        Text(
+                                          'Subtotal: ${_formatPrice(item.subtotal)}',
+                                          style: const TextStyle(
+                                            fontSize: 12,
+                                            color: Colors.black54,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  IconButton(
+                                    tooltip: 'Hapus produk',
+                                    onPressed: () {
+                                      _confirmRemove(
+                                        context,
+                                        cart,
+                                        item.medicineId,
+                                        item.name,
+                                      );
+                                    },
+                                    icon: const Icon(
+                                      Icons.delete_outline,
+                                      color: Colors.red,
+                                    ),
+                                  ),
+                                ],
+                              ),
+
+                              const Divider(height: 24),
+
+                              Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
+                                children: [
+                                  const Text(
+                                    'Jumlah',
+                                    style: TextStyle(fontSize: 13),
+                                  ),
+                                  Row(
+                                    children: [
+                                      IconButton(
+                                        onPressed: () {
+                                          cart.decreaseQuantity(
+                                            item.medicineId,
+                                          );
+                                        },
+                                        icon: const Icon(
+                                          Icons.remove_circle_outline,
+                                        ),
+                                      ),
+                                      Text(
+                                        '${item.quantity}',
+                                        style: const TextStyle(
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 15,
+                                        ),
+                                      ),
+                                      IconButton(
+                                        onPressed: item.quantity >=
+                                                item.stockQuantity
+                                            ? null
+                                            : () {
+                                                final success =
+                                                    cart.increaseQuantity(
+                                                  item.medicineId,
+                                                );
+
+                                                if (!success) {
+                                                  ScaffoldMessenger.of(
+                                                    context,
+                                                  ).showSnackBar(
+                                                    const SnackBar(
+                                                      content: Text(
+                                                        'Jumlah sudah mencapai batas stok.',
+                                                      ),
+                                                    ),
+                                                  );
+                                                }
+                                              },
+                                        icon: const Icon(
+                                          Icons.add_circle_outline,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ],
+                              ),
+
+                              Text(
+                                'Stok tersedia: ${item.stockQuantity}',
+                                style: const TextStyle(
+                                  fontSize: 11,
+                                  color: Colors.black54,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      );
+                    }),
+                  ],
+                ),
+              ),
+
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  border: Border(
+                    top: BorderSide(
+                      color: Colors.grey.shade200,
+                    ),
+                  ),
+                ),
+                child: SafeArea(
+                  top: false,
+                  child: Column(
+                    children: [
+                      Row(
+                        mainAxisAlignment:
+                            MainAxisAlignment.spaceBetween,
+                        children: [
+                          const Text(
+                            'Total Harga',
+                            style: TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          Text(
+                            _formatPrice(cart.totalPrice),
+                            style: const TextStyle(
+                              fontSize: 19,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.green,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 6),
+                      const Align(
+                        alignment: Alignment.centerLeft,
+                        child: Text(
+                          'Harga berdasarkan data simulasi apotek.',
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: Colors.black54,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+
+                      SizedBox(
+                        width: double.infinity,
+                        height: 48,
+                        child: ElevatedButton.icon(
+                          onPressed: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) =>
+                                    const CheckoutScreen(),
+                              ),
+                            );
+                          },
+                          icon: const Icon(
+                            Icons.shopping_bag_outlined,
+                          ),
+                          label: const Text(
+                            'Lanjutkan Pesanan',
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+  }
+}
+
+
+
+// ===== FILE: C:\Users\putu\Desktop\project flutter\apotech_flutter_uts\lib\screens\cart\checkout_screen.dart =====
+
+import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+
+import '../../providers/cart_provider.dart';
+import '../../providers/order_provider.dart';
+
+class CheckoutScreen extends StatelessWidget {
+  const CheckoutScreen({super.key});
+
+  String _formatPrice(double price) {
+    return 'Rp ${price.toStringAsFixed(0)}';
+  }
+
+  Future<void> _confirmOrder(BuildContext context) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          title: const Text('Konfirmasi Pesanan'),
+          content: const Text(
+            'Apakah Anda yakin ingin mengonfirmasi pesanan ini? '
+            'Pesanan ini merupakan simulasi dan perlu dikonfirmasi '
+            'dalam waktu 24 jam.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.pop(dialogContext, false);
+              },
+              child: const Text('Periksa Kembali'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.pop(dialogContext, true);
+              },
+              child: const Text('Ya, Konfirmasi'),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (confirmed != true || !context.mounted) return;
+
+    final cart = context.read<CartProvider>();
+    final orderProvider = context.read<OrderProvider>();
+
+    final success = await orderProvider.createOrder(cart);
+
+    if (!context.mounted) return;
+
+    if (success) {
+      final order = orderProvider.lastOrder;
+
+      final orderId = order?['id']?.toString() ?? '-';
+
+      final receiptNumber = orderId == '-'
+          ? '-'
+          : 'APT-${orderId.padLeft(6, '0')}';
+
+      final totalPrice =
+          (order?['total_price'] as num?)?.toDouble() ?? 0;
+
+      await showDialog<void>(
+        context: context,
+        barrierDismissible: false,
+        builder: (dialogContext) {
+          return AlertDialog(
+            icon: const Icon(
+              Icons.check_circle_outline,
+              color: Colors.green,
+              size: 55,
+            ),
+            title: const Text('Pesanan Berhasil!'),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Pesanan Anda berhasil dibuat dan tersimpan.',
+                ),
+                const SizedBox(height: 20),
+                const Text(
+                  'Nomor Resi',
+                  style: TextStyle(
+                    color: Colors.black54,
+                    fontSize: 12,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                SelectableText(
+                  receiptNumber,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 18,
+                    color: Colors.green,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                const Text(
+                  'Total Pesanan',
+                  style: TextStyle(
+                    color: Colors.black54,
+                    fontSize: 12,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  _formatPrice(totalPrice),
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 17,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                const Text(
+                  'Catatan: Pesanan ini merupakan simulasi. '
+                  'Tidak ada transaksi pembayaran atau '
+                  'pengambilan sungguhan.',
+                  style: TextStyle(fontSize: 12),
+                ),
+              ],
+            ),
+            actions: [
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: () {
+                    Navigator.pop(dialogContext);
+                    Navigator.pop(context);
+                  },
+                  child: const Text('Baik'),
+                ),
+              ),
+            ],
+          );
+        },
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            orderProvider.errorMessage ??
+                'Pesanan gagal dibuat.',
+          ),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Konfirmasi Pesanan'),
+      ),
+      body: Consumer<CartProvider>(
+        builder: (context, cart, child) {
+          if (cart.isEmpty) {
+            return const Center(
+              child: Text('Keranjang masih kosong.'),
+            );
+          }
+
+          return ListView(
+            padding: const EdgeInsets.all(16),
+            children: [
+              const Text(
+                'Informasi Apotek',
+                style: TextStyle(
+                  fontSize: 17,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 10),
+              Card(
+                child: ListTile(
+                  leading: const Icon(
+                    Icons.local_pharmacy,
+                    color: Colors.green,
+                  ),
+                  title: Text(cart.pharmacyName ?? '-'),
+                  subtitle: const Text('Apotek pilihan Anda'),
+                ),
+              ),
+              const SizedBox(height: 24),
+              const Text(
+                'Ringkasan Produk',
+                style: TextStyle(
+                  fontSize: 17,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 10),
+              ...cart.items.map(
+                (item) => Card(
+                  child: ListTile(
+                    title: Text(item.name),
+                    subtitle: Text(
+                      '${item.quantity} x '
+                      '${_formatPrice(item.price)}',
+                    ),
+                    trailing: Text(
+                      _formatPrice(item.subtotal),
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 20),
+              Card(
+                color: Colors.green.shade50,
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    children: [
+                      const Text(
+                        'Total Pesanan',
+                        style: TextStyle(fontSize: 14),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        _formatPrice(cart.totalPrice),
+                        style: const TextStyle(
+                          fontSize: 23,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.green,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+              Container(
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: Colors.orange.shade50,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Text(
+                  'Catatan: Ini merupakan pemesanan simulasi. '
+                  'Pesanan perlu dikonfirmasi dalam waktu 24 jam. '
+                  'Belum ada transaksi atau pengambilan sungguhan.',
+                  style: TextStyle(fontSize: 12),
+                ),
+              ),
+              const SizedBox(height: 24),
+              Consumer<OrderProvider>(
+                builder: (context, orderProvider, child) {
+                  return ElevatedButton(
+                    onPressed: orderProvider.isLoading
+                        ? null
+                        : () => _confirmOrder(context),
+                    style: ElevatedButton.styleFrom(
+                      minimumSize: const Size(
+                        double.infinity,
+                        50,
+                      ),
+                    ),
+                    child: orderProvider.isLoading
+                        ? const CircularProgressIndicator()
+                        : const Text('Konfirmasi Pesanan'),
+                  );
+                },
+              ),
+            ],
+          );
+        },
+      ),
+    );
+  }
+}
+
+
+
+// ===== FILE: C:\Users\putu\Desktop\project flutter\apotech_flutter_uts\lib\screens\health\health_information_screen.dart =====
+
+import 'package:flutter/material.dart';
+
+class HealthInformationScreen extends StatelessWidget {
+  const HealthInformationScreen({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Informasi Kesehatan'),
+      ),
+      body: const Center(
+        child: Text(
+          'Informasi kesehatan akan tersedia di sini.',
+          style: TextStyle(
+            fontSize: 14,
+            color: Colors.black54,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+
+
+
+// ===== FILE: C:\Users\putu\Desktop\project flutter\apotech_flutter_uts\lib\screens\home\home_screen.dart =====
+
+import 'package:flutter/material.dart';
+
+import '../../constants/app_theme.dart';
+import '../health/health_information_screen.dart';
+import '../medicines/medicine_list_screen.dart';
+import '../medicines/favorite_screen.dart';
+import '../pharmacies/pharmacy_list_screen.dart';
+
+class HomeScreen extends StatelessWidget {
+  const HomeScreen({super.key});
+
+  void _openPage(BuildContext context, Widget page) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => page),
+    );
+  }
+
+  void _showEmergencyDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          icon: const Icon(
+            Icons.emergency,
+            color: Colors.red,
+            size: 38,
+          ),
+          title: const Text('SOS Darurat'),
+          content: const Text(
+            'Fitur ini digunakan untuk informasi bantuan '
+            'darurat rumah sakit.\n\n'
+            'Pastikan nomor tujuan telah diverifikasi '
+            'sebelum melakukan panggilan.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext),
+              child: const Text('Batal'),
+            ),
+            FilledButton(
+              style: FilledButton.styleFrom(
+                backgroundColor: Colors.red,
+              ),
+              onPressed: () {
+                Navigator.pop(dialogContext);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text(
+                      'Nomor layanan darurat belum dikonfigurasi.',
+                    ),
+                  ),
+                );
+              },
+              child: const Text('Mengerti'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Row(
+          children: [
+            Icon(Icons.local_pharmacy_outlined),
+            SizedBox(width: 8),
+            Text(
+              'ApoTech',
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
+          ],
+        ),
+      ),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _buildWelcomeCard(),
+
+            const SizedBox(height: 28),
+
+            const Text(
+              'Jelajahi ApoTech',
+              style: TextStyle(
+                fontSize: 19,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+
+            const SizedBox(height: 16),
+
+            GridView.count(
+              crossAxisCount: 2,
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              crossAxisSpacing: 12,
+              mainAxisSpacing: 12,
+              childAspectRatio: 1.15,
+              children: [
+                _buildMenuCard(
+                  title: 'Katalog Obat',
+                  description: 'Informasi obat dari OpenFDA',
+                  icon: Icons.medication_outlined,
+                  color: AppTheme.blueAccent,
+                  onTap: () => _openPage(
+                    context,
+                    const MedicineListScreen(),
+                  ),
+                ),
+                _buildMenuCard(
+                  title: 'Produk Tersimpan',
+                  description: 'Lihat obat favorit kamu',
+                  icon: Icons.bookmark_outline,
+                  color: AppTheme.paleYellow,
+                  onTap: () => _openPage(
+                    context,
+                    const FavoriteScreen(),
+                  ),
+                ),
+                _buildMenuCard(
+                  title: 'Apotek Terdekat',
+                  description: 'Informasi apotek terdaftar',
+                  icon: Icons.store_outlined,
+                  color: AppTheme.blueAccent,
+                  onTap: () => _openPage(
+                    context,
+                    const PharmacyListScreen(),
+                  ),
+                ),
+                _buildMenuCard(
+                  title: 'SOS Darurat',
+                  description: 'Informasi bantuan darurat',
+                  icon: Icons.emergency,
+                  color: const Color(0xFFFFE1E1),
+                  iconColor: Colors.red,
+                  onTap: () => _showEmergencyDialog(context),
+                ),
+              ],
+            ),
+
+            const SizedBox(height: 28),
+
+            const Text(
+              'Temukan Informasi Kesehatan',
+              style: TextStyle(
+                fontSize: 19,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+
+            const SizedBox(height: 12),
+
+            InkWell(
+              onTap: () => _openPage(
+                context,
+                const HealthInformationScreen(),
+              ),
+              borderRadius: BorderRadius.circular(16),
+              child: Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(18),
+                decoration: BoxDecoration(
+                  color: AppTheme.primaryColor,
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: const Row(
+                  children: [
+                    Icon(
+                      Icons.health_and_safety_outlined,
+                      color: Colors.white,
+                      size: 34,
+                    ),
+                    SizedBox(width: 14),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Informasi Kesehatan',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16,
+                            ),
+                          ),
+                          SizedBox(height: 5),
+                          Text(
+                            'Temukan informasi kesehatan di sekitar Anda.',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 13,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Icon(
+                      Icons.arrow_forward_ios,
+                      color: Colors.white,
+                      size: 18,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+
+            const SizedBox(height: 20),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildWelcomeCard() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(22),
+      decoration: BoxDecoration(
+        color: AppTheme.blueAccent,
+        borderRadius: BorderRadius.circular(18),
+      ),
+      child: const Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Selamat Datang di ApoTech!',
+            style: TextStyle(
+              fontSize: 23,
+              fontWeight: FontWeight.bold,
+              color: AppTheme.primaryColor,
+            ),
+          ),
+          SizedBox(height: 10),
+          Text(
+            'Temukan informasi obat dan produk '
+            'kesehatan dengan mudah melalui ApoTech.',
+            style: TextStyle(
+              fontSize: 14,
+              height: 1.5,
+              color: Colors.black54,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMenuCard({
+    required String title,
+    required String description,
+    required IconData icon,
+    required Color color,
+    Color iconColor = AppTheme.primaryColor,
+    required VoidCallback onTap,
+  }) {
+    return Material(
+      color: color,
+      borderRadius: BorderRadius.circular(16),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(16),
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.all(14),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                icon,
+                size: 30,
+                color: iconColor,
+              ),
+              const SizedBox(height: 10),
+              Text(
+                title,
+                style: const TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 5),
+              Text(
+                description,
+                style: const TextStyle(
+                  fontSize: 11,
+                  color: Colors.black54,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+
+
+// ===== FILE: C:\Users\putu\Desktop\project flutter\apotech_flutter_uts\lib\screens\medicines\favorite_screen.dart =====
+
+import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+
+import '../../constants/app_theme.dart';
+import '../../providers/favorite_provider.dart';
+import 'openfda_product_detail_screen.dart';
+
+class FavoriteScreen extends StatelessWidget {
+  const FavoriteScreen({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text(
+          'Produk Tersimpan',
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+      ),
+      body: Consumer<FavoriteProvider>(
+        builder: (context, favoriteProvider, child) {
+          final favorites = favoriteProvider.favorites;
+
+          if (favorites.isEmpty) {
+            return const Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    Icons.star_border,
+                    size: 64,
+                    color: Colors.grey,
+                  ),
+                  SizedBox(height: 12),
+                  Text(
+                    'Belum ada produk tersimpan.',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  SizedBox(height: 6),
+                  Text(
+                    'Tekan ikon bintang pada detail produk '
+                    'untuk menyimpannya.',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      color: Colors.grey,
+                      fontSize: 13,
+                    ),
+                  ),
+                ],
+              ),
+            );
+          }
+
+          return ListView.separated(
+            padding: const EdgeInsets.all(16),
+            itemCount: favorites.length,
+            separatorBuilder: (context, index) =>
+                const SizedBox(height: 12),
+            itemBuilder: (context, index) {
+              final product = favorites[index];
+
+              final displayName = product.brandName.isNotEmpty
+                  ? product.brandName
+                  : product.genericName;
+
+              return Card(
+                elevation: 1,
+                color: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                clipBehavior: Clip.antiAlias,
+                child: ListTile(
+                  contentPadding: const EdgeInsets.all(12),
+                  leading: Container(
+                    width: 48,
+                    height: 48,
+                    decoration: BoxDecoration(
+                      color: AppTheme.blueAccent,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: const Icon(
+                      Icons.medication_outlined,
+                      color: AppTheme.primaryColor,
+                    ),
+                  ),
+                  title: Text(
+                    displayName.isNotEmpty
+                        ? displayName
+                        : 'Nama produk tidak tersedia',
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  subtitle: Text(
+                    product.genericName.isNotEmpty
+                        ? product.genericName
+                        : 'Nama generik tidak tersedia',
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  trailing: IconButton(
+                    tooltip: 'Hapus dari tersimpan',
+                    icon: Icon(
+                      Icons.star,
+                      color: Colors.amber.shade700,
+                    ),
+                    onPressed: () {
+                      favoriteProvider.toggleFavorite(product);
+
+                      ScaffoldMessenger.of(context)
+                        ..hideCurrentSnackBar()
+                        ..showSnackBar(
+                          const SnackBar(
+                            content: Text(
+                              'Produk dihapus dari tersimpan.',
+                            ),
+                          ),
+                        );
+                    },
+                  ),
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) =>
+                            OpenFdaProductDetailScreen(
+                          product: product,
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              );
+            },
+          );
+        },
+      ),
+    );
+  }
+}
+
+
+
+// ===== FILE: C:\Users\putu\Desktop\project flutter\apotech_flutter_uts\lib\screens\medicines\medicine_detail_screen.dart =====
+
+import 'package:flutter/material.dart';
+
+import '../../constants/app_theme.dart';
+import '../../models/medicine.dart';
+
+class MedicineDetailScreen extends StatefulWidget {
+  final Medicine medicine;
+
+  const MedicineDetailScreen({
+    super.key,
+    required this.medicine,
+  });
+
+  @override
+  State<MedicineDetailScreen> createState() =>
+      _MedicineDetailScreenState();
+}
+
+class _MedicineDetailScreenState
+    extends State<MedicineDetailScreen> {
+  bool isFavorite = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final medicine = widget.medicine;
+
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text(
+          'Detail Produk',
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
+      ),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Center(
+              child: Container(
+                width: 120,
+                height: 120,
+                decoration: BoxDecoration(
+                  color: AppTheme.blueAccent,
+                  borderRadius: BorderRadius.circular(24),
+                ),
+                child: const Icon(
+                  Icons.medication_outlined,
+                  size: 64,
+                  color: AppTheme.primaryColor,
+                ),
+              ),
+            ),
+            const SizedBox(height: 24),
+
+            Text(
+              medicine.name,
+              style: const TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 8),
+
+            Container(
+              padding: const EdgeInsets.symmetric(
+                horizontal: 12,
+                vertical: 6,
+              ),
+              decoration: BoxDecoration(
+                color: AppTheme.blueAccent,
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Text(
+                medicine.category,
+                style: const TextStyle(
+                  color: AppTheme.primaryColor,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+            const SizedBox(height: 24),
+
+            const Text(
+              'Informasi Produk',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 12),
+
+            _buildInfoCard(
+              icon: Icons.description_outlined,
+              title: 'Deskripsi',
+              value: medicine.description,
+            ),
+            const SizedBox(height: 12),
+
+            _buildInfoCard(
+              icon: Icons.inventory_2_outlined,
+              title: 'Kemasan',
+              value: medicine.packaging,
+            ),
+            const SizedBox(height: 12),
+
+            _buildInfoCard(
+              icon: Icons.storage_outlined,
+              title: 'Stok',
+              value: '${medicine.stock} unit',
+            ),
+            const SizedBox(height: 28),
+
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                onPressed: () {
+                  setState(() {
+                    isFavorite = !isFavorite;
+                  });
+
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(
+                        isFavorite
+                            ? 'Produk ditambahkan ke favorit.'
+                            : 'Produk dihapus dari favorit.',
+                      ),
+                    ),
+                  );
+                },
+                icon: Icon(
+                  isFavorite
+                      ? Icons.favorite
+                      : Icons.favorite_border,
+                ),
+                label: Text(
+                  isFavorite
+                      ? 'Hapus dari Favorit'
+                      : 'Tambah ke Favorit',
+                ),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppTheme.primaryColor,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(
+                    vertical: 16,
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildInfoCard({
+    required IconData icon,
+    required String title,
+    required String value,
+  }) {
+    return Card(
+      elevation: 1,
+      color: Colors.white,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(14),
+      ),
+      child: ListTile(
+        leading: Icon(
+          icon,
+          color: AppTheme.primaryColor,
+        ),
+        title: Text(
+          title,
+          style: const TextStyle(
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        subtitle: Text(value),
+      ),
+    );
+  }
+}
+
+
+
+// ===== FILE: C:\Users\putu\Desktop\project flutter\apotech_flutter_uts\lib\screens\medicines\medicine_list_screen.dart =====
+
+import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+
+import '../../constants/app_theme.dart';
+import '../../models/openfda_product.dart';
+import '../../providers/openfda_provider.dart';
+import 'openfda_product_detail_screen.dart';
+
+class MedicineListScreen extends StatefulWidget {
+  const MedicineListScreen({super.key});
+
+  @override
+  State<MedicineListScreen> createState() =>
+      _MedicineListScreenState();
+}
+
+class _MedicineListScreenState extends State<MedicineListScreen> {
+  String searchQuery = '';
+
+  @override
+  void initState() {
+    super.initState();
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+
+      final provider = context.read<OpenFdaProvider>();
+
+      if (provider.products.isEmpty && !provider.isLoading) {
+        provider.loadProducts();
+      }
+    });
+  }
+
+  void _openDetail(OpenFdaProduct product) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) =>
+            OpenFdaProductDetailScreen(product: product),
+      ),
+    );
+  }
+
+  List<OpenFdaProduct> _filterProducts(
+    List<OpenFdaProduct> products,
+  ) {
+    final query = searchQuery.toLowerCase();
+
+    if (query.isEmpty) {
+      return products;
+    }
+
+    return products.where((product) {
+      return product.brandName.toLowerCase().contains(query) ||
+          product.genericName.toLowerCase().contains(query) ||
+          product.manufacturer.toLowerCase().contains(query);
+    }).toList();
+  }
+
+  Widget _buildProductCard(OpenFdaProduct product) {
+    final displayName = product.brandName.isNotEmpty
+        ? product.brandName
+        : product.genericName;
+
+    return Card(
+      elevation: 1,
+      color: Colors.white,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(14),
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: () => _openDetail(product),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                width: 48,
+                height: 48,
+                decoration: BoxDecoration(
+                  color: AppTheme.blueAccent,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Icon(
+                  Icons.medication_outlined,
+                  color: AppTheme.primaryColor,
+                ),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      displayName.isNotEmpty
+                          ? displayName
+                          : 'Nama produk tidak tersedia',
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                      ),
+                    ),
+                    if (product.genericName.isNotEmpty) ...[
+                      const SizedBox(height: 5),
+                      Text(
+                        'Nama generik: ${product.genericName}',
+                        style: const TextStyle(fontSize: 13),
+                      ),
+                    ],
+                    if (product.manufacturer.isNotEmpty) ...[
+                      const SizedBox(height: 5),
+                      Text(
+                        'Produsen: ${product.manufacturer}',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Colors.grey.shade700,
+                        ),
+                      ),
+                    ],
+                    if (product.dosageForm.isNotEmpty) ...[
+                      const SizedBox(height: 5),
+                      Text(
+                        'Bentuk sediaan: ${product.dosageForm}',
+                        style: const TextStyle(fontSize: 12),
+                      ),
+                    ],
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        Text(
+                          'Lihat detail produk',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: AppTheme.primaryColor,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        const SizedBox(width: 4),
+                        const Icon(
+                          Icons.arrow_forward,
+                          size: 14,
+                          color: AppTheme.primaryColor,
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildContent(OpenFdaProvider provider) {
+    if (provider.isLoading) {
+      return const Center(
+        child: CircularProgressIndicator(),
+      );
+    }
+
+    if (provider.errorMessage != null) {
+      return Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(
+              Icons.cloud_off_outlined,
+              size: 48,
+              color: Colors.grey,
+            ),
+            const SizedBox(height: 12),
+            Text(
+              provider.errorMessage!,
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 12),
+            ElevatedButton.icon(
+              onPressed: provider.loadProducts,
+              icon: const Icon(Icons.refresh),
+              label: const Text('Coba Lagi'),
+            ),
+          ],
+        ),
+      );
+    }
+
+    if (provider.products.isEmpty) {
+      return const Center(
+        child: Text('Belum ada data produk.'),
+      );
+    }
+
+    final filteredProducts = _filterProducts(provider.products);
+
+    if (filteredProducts.isEmpty) {
+      return const Center(
+        child: Text('Produk tidak ditemukan.'),
+      );
+    }
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        if (constraints.maxWidth >= 700) {
+          return GridView.builder(
+            itemCount: filteredProducts.length,
+            gridDelegate:
+                const SliverGridDelegateWithMaxCrossAxisExtent(
+              maxCrossAxisExtent: 450,
+              mainAxisExtent: 170,
+              crossAxisSpacing: 12,
+              mainAxisSpacing: 12,
+            ),
+            itemBuilder: (context, index) {
+              return _buildProductCard(
+                filteredProducts[index],
+              );
+            },
+          );
+        }
+
+        return ListView.separated(
+          itemCount: filteredProducts.length,
+          separatorBuilder: (context, index) =>
+              const SizedBox(height: 12),
+          itemBuilder: (context, index) {
+            return _buildProductCard(
+              filteredProducts[index],
+            );
+          },
+        );
+      },
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Consumer<OpenFdaProvider>(
+      builder: (context, provider, child) {
+        final filteredProducts =
+            _filterProducts(provider.products);
+
+        return Scaffold(
+          appBar: AppBar(
+            title: const Text(
+              'Katalog Produk',
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            actions: [
+              IconButton(
+                tooltip: 'Muat Ulang Data',
+                icon: const Icon(Icons.refresh),
+                onPressed: provider.isLoading
+                    ? null
+                    : provider.loadProducts,
+              ),
+            ],
+          ),
+          body: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                TextField(
+                  onChanged: (value) {
+                    setState(() {
+                      searchQuery = value;
+                    });
+                  },
+                  decoration: InputDecoration(
+                    hintText: 'Cari nama atau produsen produk...',
+                    prefixIcon: const Icon(Icons.search),
+                    filled: true,
+                    fillColor: AppTheme.blueAccent,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(14),
+                      borderSide: BorderSide.none,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  'Data Produk OpenFDA (${filteredProducts.length})',
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Expanded(
+                  child: _buildContent(provider),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Sumber informasi: OpenFDA. '
+                  'Data ini merupakan informasi produk, '
+                  'bukan rekomendasi penggunaan obat.',
+                  style: TextStyle(
+                    fontSize: 11,
+                    color: Colors.grey.shade600,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+}
+
+
+
+// ===== FILE: C:\Users\putu\Desktop\project flutter\apotech_flutter_uts\lib\screens\medicines\openfda_product_detail_screen.dart =====
+
+import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+
+import '../../constants/app_theme.dart';
+import '../../models/openfda_product.dart';
+import '../../providers/favorite_provider.dart';
+
+class OpenFdaProductDetailScreen extends StatelessWidget {
+  final OpenFdaProduct product;
+
+  const OpenFdaProductDetailScreen({
+    super.key,
+    required this.product,
+  });
+
+  String _displayValue(String value) {
+    return value.isEmpty ? 'Tidak tersedia' : value;
+  }
+
+  Widget _buildInfoRow(String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 10),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            width: 125,
+            child: Text(
+              label,
+              style: TextStyle(
+                color: Colors.grey.shade700,
+                fontSize: 13,
+              ),
+            ),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              value,
+              style: const TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSectionTitle(String title) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Text(
+        title,
+        style: const TextStyle(
+          fontSize: 17,
+          fontWeight: FontWeight.bold,
+          color: AppTheme.primaryColor,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildListInfo(String title, List<String> items) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _buildSectionTitle(title),
+          if (items.isEmpty)
+            const Text(
+              'Tidak tersedia',
+              style: TextStyle(color: Colors.grey),
+            )
+          else
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: items.map((item) {
+                return Chip(
+                  label: Text(item),
+                  backgroundColor: AppTheme.blueAccent,
+                );
+              }).toList(),
+            ),
+        ],
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final displayName = product.brandName.isNotEmpty
+        ? product.brandName
+        : product.genericName;
+
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Detail Produk'),
+      ),
+      body: Consumer<FavoriteProvider>(
+        builder: (context, favoriteProvider, child) {
+          final isFavorite =
+              favoriteProvider.isFavorite(product);
+
+          return SingleChildScrollView(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Center(
+                  child: Container(
+                    width: 100,
+                    height: 100,
+                    decoration: BoxDecoration(
+                      color: AppTheme.blueAccent,
+                      borderRadius: BorderRadius.circular(24),
+                    ),
+                    child: const Icon(
+                      Icons.medication_outlined,
+                      size: 55,
+                      color: AppTheme.primaryColor,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 20),
+                Center(
+                  child: Text(
+                    _displayValue(displayName),
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      fontSize: 22,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                const Center(
+                  child: Chip(
+                    label: Text('Data OpenFDA'),
+                    backgroundColor: AppTheme.blueAccent,
+                  ),
+                ),
+
+                const SizedBox(height: 16),
+
+                // Tombol bintang Produk Tersimpan
+                SizedBox(
+                  width: double.infinity,
+                  child: OutlinedButton.icon(
+                    onPressed: product.productNdc.isEmpty
+                        ? null
+                        : () {
+                            favoriteProvider.toggleFavorite(
+                              product,
+                            );
+
+                            ScaffoldMessenger.of(context)
+                              ..hideCurrentSnackBar()
+                              ..showSnackBar(
+                                SnackBar(
+                                  content: Text(
+                                    isFavorite
+                                        ? 'Produk dihapus dari tersimpan.'
+                                        : 'Produk berhasil disimpan.',
+                                  ),
+                                ),
+                              );
+                          },
+                    icon: Icon(
+                      isFavorite
+                          ? Icons.star
+                          : Icons.star_border,
+                      color: isFavorite
+                          ? Colors.amber.shade700
+                          : AppTheme.primaryColor,
+                    ),
+                    label: Text(
+                      isFavorite
+                          ? 'Hapus dari Produk Tersimpan'
+                          : 'Simpan Produk',
+                    ),
+                  ),
+                ),
+
+                const SizedBox(height: 28),
+
+                _buildSectionTitle('Informasi Produk'),
+                const Divider(),
+                _buildInfoRow(
+                  'Nama merek',
+                  _displayValue(product.brandName),
+                ),
+                _buildInfoRow(
+                  'Nama generik',
+                  _displayValue(product.genericName),
+                ),
+                _buildInfoRow(
+                  'Produsen',
+                  _displayValue(product.manufacturer),
+                ),
+                _buildInfoRow(
+                  'Bentuk sediaan',
+                  _displayValue(product.dosageForm),
+                ),
+                _buildInfoRow(
+                  'Jenis produk',
+                  _displayValue(product.productType),
+                ),
+                _buildInfoRow(
+                  'NDC',
+                  _displayValue(product.productNdc),
+                ),
+                const Divider(),
+                const SizedBox(height: 20),
+
+                _buildListInfo(
+                  'Bahan Aktif',
+                  product.activeIngredients,
+                ),
+                _buildListInfo(
+                  'Rute Penggunaan',
+                  product.routes,
+                ),
+
+                _buildSectionTitle('Ketersediaan ApoTech'),
+                const Divider(),
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Colors.orange.withValues(alpha: 0.08),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: Colors.orange.withValues(alpha: 0.3),
+                    ),
+                  ),
+                  child: const Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Icon(
+                            Icons.inventory_2_outlined,
+                            color: Colors.orange,
+                          ),
+                          SizedBox(width: 8),
+                          Text(
+                            'Belum masuk inventaris',
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
+                      ),
+                      SizedBox(height: 8),
+                      Text(
+                        'Informasi stok dan ketersediaan produk '
+                        'akan dikelola melalui database ApoTech.',
+                        style: TextStyle(fontSize: 13),
+                      ),
+                    ],
+                  ),
+                ),
+
+                const SizedBox(height: 20),
+                const Text(
+                  'Sumber informasi: OpenFDA. Data ini merupakan '
+                  'informasi produk dan bukan rekomendasi penggunaan obat.',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Colors.grey,
+                  ),
+                ),
+              ],
+            ),
+          );
+        },
+      ),
+    );
+  }
+}
+
+
+
+// ===== FILE: C:\Users\putu\Desktop\project flutter\apotech_flutter_uts\lib\screens\pharmacies\pharmacy_detail_screen.dart =====
+
+import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+
+import '../../providers/cart_provider.dart';
+
+class PharmacyDetailScreen extends StatelessWidget {
+  final Map<String, dynamic> pharmacy;
+
+  const PharmacyDetailScreen({
+    super.key,
+    required this.pharmacy,
+  });
+
+  Future<List<Map<String, dynamic>>> _loadProducts() async {
+    final pharmacyId = pharmacy['id'];
+
+    final response = await Supabase.instance.client
+        .from('pharmacy_medicines')
+        .select('''
+          id,
+          price,
+          stock_quantity,
+          availability_status,
+          medicines (
+            id,
+            name,
+            category,
+            description,
+            packaging
+          )
+        ''')
+        .eq('pharmacy_id', pharmacyId)
+        .order('id');
+
+    return List<Map<String, dynamic>>.from(response);
+  }
+
+  void _addToCart(
+    BuildContext context, {
+    required int pharmacyId,
+    required String pharmacyName,
+    required int medicineId,
+    required String medicineName,
+    required double price,
+    required int stock,
+  }) {
+    final cartProvider = context.read<CartProvider>();
+
+    final result = cartProvider.addItem(
+      pharmacyId: pharmacyId,
+      pharmacyName: pharmacyName,
+      medicineId: medicineId,
+      name: medicineName,
+      price: price,
+      stockQuantity: stock,
+    );
+
+    String message;
+
+    switch (result) {
+      case CartAddResult.added:
+        message = '$medicineName berhasil ditambahkan ke keranjang.';
+        break;
+      case CartAddResult.differentPharmacy:
+        message =
+            'Keranjang hanya dapat berisi produk dari satu apotek. '
+            'Kosongkan keranjang terlebih dahulu untuk memilih apotek ini.';
+        break;
+      case CartAddResult.outOfStock:
+        message = 'Produk sedang tidak tersedia.';
+        break;
+      case CartAddResult.insufficientStock:
+        message = 'Jumlah produk sudah mencapai batas stok.';
+        break;
+    }
+
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        SnackBar(
+          content: Text(message),
+          behavior: SnackBarBehavior.floating,
+          duration: const Duration(seconds: 3),
+        ),
+      );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final pharmacyId = (pharmacy['id'] as num).toInt();
+    final name =
+        pharmacy['name']?.toString() ?? 'Nama tidak tersedia';
+    final address =
+        pharmacy['address']?.toString() ?? 'Alamat tidak tersedia';
+    final city = pharmacy['city']?.toString() ?? '';
+    final phone = pharmacy['phone']?.toString() ?? '';
+    final openingHours =
+        pharmacy['opening_hours']?.toString() ?? '';
+
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Profil Apotek'),
+      ),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                color: Colors.green.shade50,
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Column(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(20),
+                    decoration: const BoxDecoration(
+                      color: Colors.white,
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(
+                      Icons.local_pharmacy,
+                      size: 48,
+                      color: Colors.green,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    name,
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      fontSize: 21,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  const Text(
+                    'Profil Apotek ApoTech',
+                    style: TextStyle(
+                      color: Colors.black54,
+                      fontSize: 13,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            const SizedBox(height: 28),
+
+            const Text(
+              'Informasi Apotek',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+
+            const SizedBox(height: 16),
+
+            _buildInfoTile(
+              Icons.location_on_outlined,
+              'Alamat',
+              city.isEmpty ? address : '$address, $city',
+            ),
+
+            if (phone.isNotEmpty)
+              _buildInfoTile(
+                Icons.phone_outlined,
+                'Nomor Telepon',
+                phone,
+              ),
+
+            if (openingHours.isNotEmpty)
+              _buildInfoTile(
+                Icons.access_time,
+                'Jam Operasional',
+                openingHours,
+              ),
+
+            const SizedBox(height: 28),
+
+            const Text(
+              'Ketersediaan Produk',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+
+            const SizedBox(height: 6),
+
+            const Text(
+              'Informasi produk berdasarkan data simulasi apotek.',
+              style: TextStyle(
+                color: Colors.black54,
+                fontSize: 12,
+              ),
+            ),
+
+            const SizedBox(height: 16),
+
+            FutureBuilder<List<Map<String, dynamic>>>(
+              future: _loadProducts(),
+              builder: (context, snapshot) {
+                if (snapshot.connectionState ==
+                    ConnectionState.waiting) {
+                  return const Center(
+                    child: Padding(
+                      padding: EdgeInsets.all(24),
+                      child: CircularProgressIndicator(),
+                    ),
+                  );
+                }
+
+                if (snapshot.hasError) {
+                  return _buildMessage(
+                    'Gagal memuat produk.\n${snapshot.error}',
+                    isError: true,
+                  );
+                }
+
+                final products = snapshot.data ?? [];
+
+                if (products.isEmpty) {
+                  return _buildMessage(
+                    'Belum ada produk untuk apotek ini.',
+                  );
+                }
+
+                return Column(
+                  children: products.map((item) {
+                    final medicine = item['medicines'];
+
+                    if (medicine == null) {
+                      return const SizedBox.shrink();
+                    }
+
+                    final product =
+                        Map<String, dynamic>.from(medicine);
+
+                    final medicineId =
+                        (product['id'] as num).toInt();
+
+                    final productName =
+                        product['name']?.toString() ??
+                            'Produk tidak tersedia';
+
+                    final category =
+                        product['category']?.toString() ?? '';
+
+                    final packaging =
+                        product['packaging']?.toString() ?? '';
+
+                    final stock =
+                        (item['stock_quantity'] as num?)
+                                ?.toInt() ??
+                            0;
+
+                    final price =
+                        (item['price'] as num?)?.toDouble() ?? 0;
+
+                    final status =
+                        item['availability_status']?.toString() ??
+                            '';
+
+                    final isAvailable =
+                        status == 'available' && stock > 0;
+
+                    return _buildProductCard(
+                      context: context,
+                      pharmacyId: pharmacyId,
+                      pharmacyName: name,
+                      medicineId: medicineId,
+                      name: productName,
+                      category: category,
+                      packaging: packaging,
+                      stock: stock,
+                      price: price,
+                      isAvailable: isAvailable,
+                    );
+                  }).toList(),
+                );
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildProductCard({
+    required BuildContext context,
+    required int pharmacyId,
+    required String pharmacyName,
+    required int medicineId,
+    required String name,
+    required String category,
+    required String packaging,
+    required int stock,
+    required double price,
+    required bool isAvailable,
+  }) {
+    return Opacity(
+      opacity: isAvailable ? 1 : 0.55,
+      child: Container(
+        width: double.infinity,
+        margin: const EdgeInsets.only(bottom: 12),
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: Colors.grey.shade200),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.green.shade50,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: const Icon(
+                    Icons.medical_services_outlined,
+                    color: Colors.green,
+                    size: 26,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        name,
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 15,
+                        ),
+                      ),
+                      if (category.isNotEmpty) ...[
+                        const SizedBox(height: 4),
+                        Text(
+                          category,
+                          style: const TextStyle(
+                            color: Colors.black54,
+                            fontSize: 12,
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+                Icon(
+                  isAvailable
+                      ? Icons.check_circle
+                      : Icons.cancel,
+                  color:
+                      isAvailable ? Colors.green : Colors.red,
+                ),
+              ],
+            ),
+
+            const SizedBox(height: 14),
+
+            Text(
+              'Rp ${price.toStringAsFixed(0)}',
+              style: const TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+                color: Colors.green,
+              ),
+            ),
+
+            const SizedBox(height: 6),
+
+            Text(
+              'Kemasan: ${packaging.isEmpty ? '-' : packaging}',
+              style: const TextStyle(fontSize: 12),
+            ),
+
+            const SizedBox(height: 4),
+
+            Text(
+              'Stok: $stock',
+              style: const TextStyle(fontSize: 12),
+            ),
+
+            const SizedBox(height: 10),
+
+            Container(
+              padding: const EdgeInsets.symmetric(
+                horizontal: 10,
+                vertical: 6,
+              ),
+              decoration: BoxDecoration(
+                color: isAvailable
+                    ? Colors.green.shade50
+                    : Colors.red.shade50,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Text(
+                isAvailable ? 'Tersedia' : 'Stok habis',
+                style: TextStyle(
+                  color:
+                      isAvailable ? Colors.green : Colors.red,
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+
+            if (isAvailable) ...[
+              const SizedBox(height: 12),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  onPressed: () {
+                    _addToCart(
+                      context,
+                      pharmacyId: pharmacyId,
+                      pharmacyName: pharmacyName,
+                      medicineId: medicineId,
+                      medicineName: name,
+                      price: price,
+                      stock: stock,
+                    );
+                  },
+                  icon: const Icon(Icons.add_shopping_cart),
+                  label: const Text('Tambah ke Keranjang'),
+                ),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildMessage(
+    String message, {
+    bool isError = false,
+  }) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.grey.shade100,
+        borderRadius: BorderRadius.circular(14),
+      ),
+      child: Text(
+        message,
+        style: TextStyle(
+          color: isError ? Colors.red : Colors.black54,
+          height: 1.5,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildInfoTile(
+    IconData icon,
+    String title,
+    String value,
+  ) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(
+            icon,
+            color: Colors.green,
+            size: 23,
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 14,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  value,
+                  style: const TextStyle(
+                    color: Colors.black54,
+                    fontSize: 13,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+
+
+// ===== FILE: C:\Users\putu\Desktop\project flutter\apotech_flutter_uts\lib\screens\pharmacies\pharmacy_list_screen.dart =====
+
+import 'package:flutter/material.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+
+import 'pharmacy_detail_screen.dart';
+
+class PharmacyListScreen extends StatefulWidget {
+  const PharmacyListScreen({super.key});
+
+  @override
+  State<PharmacyListScreen> createState() =>
+      _PharmacyListScreenState();
+}
+
+class _PharmacyListScreenState extends State<PharmacyListScreen> {
+  final SupabaseClient supabase = Supabase.instance.client;
+
+  List<Map<String, dynamic>> pharmacies = [];
+
+  bool isLoading = true;
+  String? errorMessage;
+
+  @override
+  void initState() {
+    super.initState();
+    loadPharmacies();
+  }
+
+  Future<void> loadPharmacies() async {
+    setState(() {
+      isLoading = true;
+      errorMessage = null;
+    });
+
+    try {
+      final response = await supabase
+          .from('pharmacies')
+          .select()
+          .eq('is_active', true)
+          .order('name');
+
+      final data = response
+          .map((item) => Map<String, dynamic>.from(item))
+          .toList();
+
+      if (!mounted) return;
+
+      setState(() {
+        pharmacies = data;
+        isLoading = false;
+      });
+    } catch (error) {
+      if (!mounted) return;
+
+      setState(() {
+        errorMessage = error.toString();
+        isLoading = false;
+      });
+    }
+  }
+
+  void _openPharmacyDetail(Map<String, dynamic> pharmacy) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => PharmacyDetailScreen(
+          pharmacy: pharmacy,
+        ),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text(
+          'Apotek Terdekat',
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
+        actions: [
+          IconButton(
+            tooltip: 'Muat ulang',
+            onPressed: loadPharmacies,
+            icon: const Icon(Icons.refresh),
+          ),
+        ],
+      ),
+      body: RefreshIndicator(
+        onRefresh: loadPharmacies,
+        child: _buildBody(),
+      ),
+    );
+  }
+
+  Widget _buildBody() {
+    if (isLoading) {
+      return const Center(
+        child: CircularProgressIndicator(),
+      );
+    }
+
+    if (errorMessage != null) {
+      return ListView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: const EdgeInsets.all(24),
+        children: [
+          const SizedBox(height: 100),
+          const Icon(
+            Icons.cloud_off_outlined,
+            size: 60,
+            color: Colors.redAccent,
+          ),
+          const SizedBox(height: 16),
+          const Text(
+            'Gagal Memuat Data Apotek',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            errorMessage!,
+            textAlign: TextAlign.center,
+            style: const TextStyle(color: Colors.grey),
+          ),
+          const SizedBox(height: 20),
+          Center(
+            child: ElevatedButton.icon(
+              onPressed: loadPharmacies,
+              icon: const Icon(Icons.refresh),
+              label: const Text('Coba Lagi'),
+            ),
+          ),
+        ],
+      );
+    }
+
+    if (pharmacies.isEmpty) {
+      return ListView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: const EdgeInsets.all(24),
+        children: const [
+          SizedBox(height: 100),
+          Icon(
+            Icons.store_outlined,
+            size: 65,
+            color: Colors.grey,
+          ),
+          SizedBox(height: 16),
+          Text(
+            'Belum Ada Data Apotek',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          SizedBox(height: 8),
+          Text(
+            'Data apotek yang tersedia akan ditampilkan '
+            'di halaman ini setelah ditambahkan ke Supabase.',
+            textAlign: TextAlign.center,
+            style: TextStyle(color: Colors.grey),
+          ),
+        ],
+      );
+    }
+
+    return ListView(
+      physics: const AlwaysScrollableScrollPhysics(),
+      padding: const EdgeInsets.all(16),
+      children: [
+        Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: Colors.green.shade50,
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: const Row(
+            children: [
+              Icon(
+                Icons.location_on_outlined,
+                color: Colors.green,
+                size: 32,
+              ),
+              SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Informasi Apotek',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                      ),
+                    ),
+                    SizedBox(height: 4),
+                    Text(
+                      'Pilih apotek untuk melihat profil dan '
+                      'informasi lebih lanjut.',
+                      style: TextStyle(fontSize: 12),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 20),
+        Text(
+          '${pharmacies.length} Apotek Terdaftar',
+          style: const TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        const SizedBox(height: 12),
+        ...pharmacies.map(_buildPharmacyCard),
+      ],
+    );
+  }
+
+  Widget _buildPharmacyCard(Map<String, dynamic> pharmacy) {
+    final name =
+        pharmacy['name']?.toString() ?? 'Nama tidak tersedia';
+    final address =
+        pharmacy['address']?.toString() ?? 'Alamat tidak tersedia';
+    final city = pharmacy['city']?.toString() ?? '';
+    final phone = pharmacy['phone']?.toString() ?? '';
+    final openingHours =
+        pharmacy['opening_hours']?.toString() ?? '';
+
+    return Card(
+      margin: const EdgeInsets.only(bottom: 12),
+      elevation: 2,
+      clipBehavior: Clip.antiAlias,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: InkWell(
+        onTap: () => _openPharmacyDetail(pharmacy),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Colors.green.shade50,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: const Icon(
+                      Icons.local_pharmacy_outlined,
+                      color: Colors.green,
+                      size: 28,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      name,
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                  const Icon(
+                    Icons.arrow_forward_ios,
+                    size: 16,
+                    color: Colors.grey,
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              _buildInfoRow(
+                Icons.location_on_outlined,
+                city.isEmpty ? address : '$address, $city',
+              ),
+              if (openingHours.isNotEmpty) ...[
+                const SizedBox(height: 10),
+                _buildInfoRow(
+                  Icons.access_time,
+                  openingHours,
+                ),
+              ],
+              if (phone.isNotEmpty) ...[
+                const SizedBox(height: 10),
+                _buildInfoRow(
+                  Icons.phone_outlined,
+                  phone,
+                ),
+              ],
+              const SizedBox(height: 14),
+              const Align(
+                alignment: Alignment.centerRight,
+                child: Text(
+                  'Lihat Profil Apotek',
+                  style: TextStyle(
+                    color: Colors.green,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 12,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildInfoRow(IconData icon, String value) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Icon(
+          icon,
+          size: 19,
+          color: Colors.grey.shade600,
+        ),
+        const SizedBox(width: 10),
+        Expanded(
+          child: Text(
+            value,
+            style: const TextStyle(fontSize: 13),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+
+
+// ===== FILE: C:\Users\putu\Desktop\project flutter\apotech_flutter_uts\lib\services\local_medicine_service.dart =====
+
+import '../models/medicine.dart';
+
+class LocalMedicineService {
+  Future<List<Medicine>> getMedicines() async {
+    return const [
+      Medicine(
+        id: 1,
+        name: 'Vitamin C',
+        category: 'Vitamin',
+        description: 'Produk vitamin C.',
+        packaging: 'Botol',
+        stock: 20,
+      ),
+      Medicine(
+        id: 2,
+        name: 'Masker Medis',
+        category: 'Perawatan',
+        description: 'Produk perlengkapan kesehatan.',
+        packaging: 'Kotak',
+        stock: 15,
+      ),
+      Medicine(
+        id: 3,
+        name: 'Termometer Digital',
+        category: 'Alat Kesehatan',
+        description: 'Alat pengukur suhu digital.',
+        packaging: 'Unit',
+        stock: 10,
+      ),
+      Medicine(
+        id: 4,
+        name: 'Hand Sanitizer',
+        category: 'Perawatan',
+        description: 'Produk kebersihan tangan.',
+        packaging: 'Botol',
+        stock: 12,
+      ),
+    ];
+  }
+}
+
+
+
+// ===== FILE: C:\Users\putu\Desktop\project flutter\apotech_flutter_uts\lib\services\openfda_inventory_service.dart =====
+import 'package:supabase_flutter/supabase_flutter.dart';
+
+import '../models/openfda_product.dart';
+
+class OpenFdaInventoryService {
+  final SupabaseClient _supabase = Supabase.instance.client;
+
+  Future<bool> saveProduct(OpenFdaProduct product) async {
+    if (product.productNdc.isEmpty) {
+      throw Exception('Kode produk NDC tidak tersedia.');
+    }
+
+    final existing = await _supabase
+        .from('medicines')
+        .select('id')
+        .eq('product_ndc', product.productNdc)
+        .maybeSingle();
+
+    if (existing != null) {
+      return false;
+    }
+
+    final description = [
+      'Nama generik: ${product.genericName}',
+      'Produsen: ${product.manufacturer}',
+      'Bahan aktif: ${product.activeIngredients.join(', ')}',
+    ].join('\n');
+
+    await _supabase.from('medicines').insert({
+      'product_ndc': product.productNdc,
+      'name': product.brandName.isNotEmpty
+          ? product.brandName
+          : product.genericName,
+      'category': product.productType,
+      'description': description,
+      'packaging': product.dosageForm,
+      'stock': 0,
+    });
+
+    return true;
+  }
+}
+
+
+// ===== FILE: C:\Users\putu\Desktop\project flutter\apotech_flutter_uts\lib\services\openfda_service.dart =====
+
+import 'dart:convert';
+
+import 'package:http/http.dart' as http;
+
+import '../models/openfda_product.dart';
+
+class OpenFdaService {
+  static const String _baseUrl =
+      'https://api.fda.gov/drug/ndc.json';
+
+  Future<List<OpenFdaProduct>> getProducts() async {
+    final uri = Uri.parse(_baseUrl).replace(
+      queryParameters: {
+        'search': 'product_type:"HUMAN OTC DRUG"',
+        'limit': '20',
+      },
+    );
+
+    final response = await http.get(uri);
+
+    if (response.statusCode == 200) {
+      final Map<String, dynamic> data =
+          jsonDecode(response.body) as Map<String, dynamic>;
+
+      final List<dynamic> results =
+          data['results'] as List<dynamic>;
+
+      return results
+          .map(
+            (item) => OpenFdaProduct.fromJson(
+              item as Map<String, dynamic>,
+            ),
+          )
+          .toList();
+    }
+
+    throw Exception(
+      'Gagal mengambil data OpenFDA. '
+      'Status code: ${response.statusCode}',
+    );
+  }
+}
+
+
+
+// ===== FILE: C:\Users\putu\Desktop\project flutter\apotech_flutter_uts\lib\services\order_service.dart =====
+
+import 'package:supabase_flutter/supabase_flutter.dart';
+
+import '../providers/cart_provider.dart';
+
+class OrderService {
+  final SupabaseClient _supabase = Supabase.instance.client;
+
+  Future<Map<String, dynamic>> createOrder({
+    required CartProvider cart,
+  }) async {
+    if (cart.isEmpty || cart.pharmacyId == null) {
+      throw Exception('Keranjang masih kosong.');
+    }
+
+    final order = await _supabase
+        .from('orders')
+        .insert({
+          'pharmacy_id': cart.pharmacyId,
+          'total_price': cart.totalPrice,
+          'order_status': 'pending',
+        })
+        .select()
+        .single();
+
+    final orderId = order['id'];
+
+    try {
+      final orderItems = cart.items.map((item) {
+        return {
+          'order_id': orderId,
+          'medicine_id': item.medicineId,
+          'quantity': item.quantity,
+          'unit_price': item.price,
+          'subtotal': item.subtotal,
+        };
+      }).toList();
+
+      await _supabase
+          .from('order_items')
+          .insert(orderItems);
+
+      return order;
+    } catch (error) {
+      await _supabase
+          .from('orders')
+          .delete()
+          .eq('id', orderId);
+
+      rethrow;
+    }
+  }
+
+  Future<List<Map<String, dynamic>>> getOrders() async {
+    final response = await _supabase
+        .from('orders')
+        .select('''
+          id,
+          pharmacy_id,
+          total_price,
+          order_status,
+          created_at,
+          pharmacies (
+            name,
+            address
+          ),
+          order_items (
+            id,
+            medicine_id,
+            quantity,
+            unit_price,
+            subtotal,
+            medicines (
+              name,
+              category,
+              packaging
+            )
+          )
+        ''')
+        .order('created_at', ascending: false);
+
+    return List<Map<String, dynamic>>.from(response);
+  }
+}
+
