@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'home/home_screen.dart';
 import 'medicines/medicine_list_screen.dart';
 import 'medicines/favorite_screen.dart';
+import 'cart/cart_screen.dart';
 
 class MainNavigationScreen extends StatefulWidget {
   const MainNavigationScreen({super.key});
@@ -21,6 +22,7 @@ class _MainNavigationScreenState
     HomeScreen(),
     MedicineListScreen(),
     FavoriteScreen(),
+    CartScreen(),
   ];
 
   @override
@@ -56,6 +58,11 @@ class _MainNavigationScreenState
                       icon: Icon(Icons.star_border),
                       selectedIcon: Icon(Icons.star),
                       label: Text('Tersimpan'),
+                    ),
+                    NavigationRailDestination(
+                      icon: Icon(Icons.shopping_cart_outlined),
+                      selectedIcon: Icon(Icons.shopping_cart),
+                      label: Text('Keranjang'),
                     ),
                   ],
                 ),
@@ -98,6 +105,11 @@ class _MainNavigationScreenState
                 icon: Icon(Icons.star_border),
                 selectedIcon: Icon(Icons.star),
                 label: 'Tersimpan',
+              ),
+              NavigationDestination(
+                icon: Icon(Icons.shopping_cart_outlined),
+                selectedIcon: Icon(Icons.shopping_cart),
+                label: 'Keranjang',
               ),
             ],
           ),

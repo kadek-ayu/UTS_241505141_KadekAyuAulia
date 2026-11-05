@@ -1,6 +1,9 @@
 
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+
+import '../../providers/cart_provider.dart';
 
 class PharmacyDetailScreen extends StatelessWidget {
   final Map<String, dynamic> pharmacy;
@@ -34,8 +37,59 @@ class PharmacyDetailScreen extends StatelessWidget {
     return List<Map<String, dynamic>>.from(response);
   }
 
+  void _addToCart(
+    BuildContext context, {
+    required int pharmacyId,
+    required String pharmacyName,
+    required int medicineId,
+    required String medicineName,
+    required double price,
+    required int stock,
+  }) {
+    final cartProvider = context.read<CartProvider>();
+
+    final result = cartProvider.addItem(
+      pharmacyId: pharmacyId,
+      pharmacyName: pharmacyName,
+      medicineId: medicineId,
+      name: medicineName,
+      price: price,
+      stockQuantity: stock,
+    );
+
+    String message;
+
+    switch (result) {
+      case CartAddResult.added:
+        message = '$medicineName berhasil ditambahkan ke keranjang.';
+        break;
+      case CartAddResult.differentPharmacy:
+        message =
+            'Keranjang hanya dapat berisi produk dari satu apotek. '
+            'Kosongkan keranjang terlebih dahulu untuk memilih apotek ini.';
+        break;
+      case CartAddResult.outOfStock:
+        message = 'Produk sedang tidak tersedia.';
+        break;
+      case CartAddResult.insufficientStock:
+        message = 'Jumlah produk sudah mencapai batas stok.';
+        break;
+    }
+
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        SnackBar(
+          content: Text(message),
+          behavior: SnackBarBehavior.floating,
+          duration: const Duration(seconds: 3),
+        ),
+      );
+  }
+
   @override
   Widget build(BuildContext context) {
+    final pharmacyId = (pharmacy['id'] as num).toInt();
     final name =
         pharmacy['name']?.toString() ?? 'Nama tidak tersedia';
     final address =
@@ -189,9 +243,12 @@ class PharmacyDetailScreen extends StatelessWidget {
                     final product =
                         Map<String, dynamic>.from(medicine);
 
+                    final medicineId =
+                        (product['id'] as num).toInt();
+
                     final productName =
                         product['name']?.toString() ??
-                        'Produk tidak tersedia';
+                            'Produk tidak tersedia';
 
                     final category =
                         product['category']?.toString() ?? '';
@@ -200,18 +257,25 @@ class PharmacyDetailScreen extends StatelessWidget {
                         product['packaging']?.toString() ?? '';
 
                     final stock =
-                        (item['stock_quantity'] as num?)?.toInt() ?? 0;
+                        (item['stock_quantity'] as num?)
+                                ?.toInt() ??
+                            0;
 
                     final price =
                         (item['price'] as num?)?.toDouble() ?? 0;
 
                     final status =
-                        item['availability_status']?.toString() ?? '';
+                        item['availability_status']?.toString() ??
+                            '';
 
                     final isAvailable =
                         status == 'available' && stock > 0;
 
                     return _buildProductCard(
+                      context: context,
+                      pharmacyId: pharmacyId,
+                      pharmacyName: name,
+                      medicineId: medicineId,
                       name: productName,
                       category: category,
                       packaging: packaging,
@@ -230,6 +294,10 @@ class PharmacyDetailScreen extends StatelessWidget {
   }
 
   Widget _buildProductCard({
+    required BuildContext context,
+    required int pharmacyId,
+    required String pharmacyName,
+    required int medicineId,
     required String name,
     required String category,
     required String packaging,
@@ -295,7 +363,8 @@ class PharmacyDetailScreen extends StatelessWidget {
                   isAvailable
                       ? Icons.check_circle
                       : Icons.cancel,
-                  color: isAvailable ? Colors.green : Colors.red,
+                  color:
+                      isAvailable ? Colors.green : Colors.red,
                 ),
               ],
             ),
@@ -341,12 +410,35 @@ class PharmacyDetailScreen extends StatelessWidget {
               child: Text(
                 isAvailable ? 'Tersedia' : 'Stok habis',
                 style: TextStyle(
-                  color: isAvailable ? Colors.green : Colors.red,
+                  color:
+                      isAvailable ? Colors.green : Colors.red,
                   fontSize: 12,
                   fontWeight: FontWeight.bold,
                 ),
               ),
             ),
+
+            if (isAvailable) ...[
+              const SizedBox(height: 12),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  onPressed: () {
+                    _addToCart(
+                      context,
+                      pharmacyId: pharmacyId,
+                      pharmacyName: pharmacyName,
+                      medicineId: medicineId,
+                      medicineName: name,
+                      price: price,
+                      stock: stock,
+                    );
+                  },
+                  icon: const Icon(Icons.add_shopping_cart),
+                  label: const Text('Tambah ke Keranjang'),
+                ),
+              ),
+            ],
           ],
         ),
       ),
