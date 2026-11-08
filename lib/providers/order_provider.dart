@@ -15,10 +15,12 @@ class OrderProvider extends ChangeNotifier {
   bool get isLoading => _isLoading;
   String? get errorMessage => _errorMessage;
   Map<String, dynamic>? get lastOrder => _lastOrder;
-  List<Map<String, dynamic>> get orders =>
-      List.unmodifiable(_orders);
+  List<Map<String, dynamic>> get orders => List.unmodifiable(_orders);
 
-  Future<bool> createOrder(CartProvider cart) async {
+  Future<bool> createOrder(
+    CartProvider cart, {
+    required DateTime pickupDate,
+  }) async {
     if (_isLoading) return false;
 
     _isLoading = true;
@@ -28,6 +30,7 @@ class OrderProvider extends ChangeNotifier {
     try {
       _lastOrder = await _orderService.createOrder(
         cart: cart,
+        pickupDate: pickupDate,
       );
 
       return true;
@@ -52,6 +55,38 @@ class OrderProvider extends ChangeNotifier {
     } finally {
       _isLoading = false;
       notifyListeners();
+    }
+  }
+
+  Future<bool> updatePickupDate({
+    required int orderId,
+    required DateTime pickupDate,
+  }) async {
+    try {
+      final success = await _orderService.updatePickupDate(
+        orderId: orderId,
+        pickupDate: pickupDate,
+      );
+
+      if (success) await loadOrders();
+      return success;
+    } catch (error) {
+      _errorMessage = error.toString();
+      notifyListeners();
+      return false;
+    }
+  }
+
+  Future<bool> cancelOrder(int orderId) async {
+    try {
+      final success = await _orderService.cancelOrder(orderId);
+
+      if (success) await loadOrders();
+      return success;
+    } catch (error) {
+      _errorMessage = error.toString();
+      notifyListeners();
+      return false;
     }
   }
 }

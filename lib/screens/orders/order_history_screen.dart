@@ -28,44 +28,34 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
     final value = double.tryParse(price.toString()) ?? 0;
 
     return 'Rp ${value.toStringAsFixed(0).replaceAllMapped(
-          RegExp(r'(\d)(?=(\d{3})+(?!\d))'),
-          (match) => '${match[1]}.',
-        )}';
+      RegExp(r'(\d)(?=(\d{3})+(?!\d))'),
+      (match) => '${match[1]}.',
+    )}';
   }
 
   String _formatDate(dynamic date) {
-    final parsedDate = DateTime.tryParse(date.toString());
+    if (date == null) return 'Belum ditentukan';
 
-    if (parsedDate == null) return '-';
+    final parsed = DateTime.tryParse(date.toString());
+    if (parsed == null) return '-';
 
-    final localDate = parsedDate.toLocal();
+    final d = parsed.toLocal();
 
     const months = [
-      'Januari',
-      'Februari',
-      'Maret',
-      'April',
-      'Mei',
-      'Juni',
-      'Juli',
-      'Agustus',
-      'September',
-      'Oktober',
-      'November',
-      'Desember',
+      'Januari', 'Februari', 'Maret', 'April',
+      'Mei', 'Juni', 'Juli', 'Agustus',
+      'September', 'Oktober', 'November', 'Desember',
     ];
 
-    return '${localDate.day} ${months[localDate.month - 1]} '
-        '${localDate.year}, '
-        '${localDate.hour.toString().padLeft(2, '0')}:'
-        '${localDate.minute.toString().padLeft(2, '0')}';
+    return '${d.day} ${months[d.month - 1]} ${d.year}, '
+        '${d.hour.toString().padLeft(2, '0')}:'
+        '${d.minute.toString().padLeft(2, '0')}';
   }
 
   Map<String, dynamic> _asMap(dynamic value) {
     if (value is Map) {
       return Map<String, dynamic>.from(value);
     }
-
     return {};
   }
 
@@ -76,7 +66,6 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
           .map((item) => Map<String, dynamic>.from(item))
           .toList();
     }
-
     return [];
   }
 
@@ -110,11 +99,129 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
     }
   }
 
+  Future<void> _changePickupDate(
+    Map<String, dynamic> order,
+  ) async {
+    final orderId = int.tryParse(order['id'].toString());
+    if (orderId == null) return;
+
+    final currentPickup = order['pickup_at'] == null
+        ? null
+        : DateTime.tryParse(order['pickup_at'].toString())?.toLocal();
+
+    final now = DateTime.now();
+
+    final selected = await showDatePicker(
+      context: context,
+      initialDate: currentPickup != null &&
+              currentPickup.isAfter(now)
+          ? currentPickup
+          : now,
+      firstDate: DateTime(now.year, now.month, now.day),
+      lastDate: DateTime(now.year + 1, 12, 31),
+      helpText: 'Pilih tanggal pengambilan',
+    );
+
+    if (selected == null || !mounted) return;
+
+    final selectedTime = await showTimePicker(
+      context: context,
+      initialTime: currentPickup != null
+          ? TimeOfDay.fromDateTime(currentPickup)
+          : TimeOfDay.now(),
+      helpText: 'Pilih jam pengambilan',
+    );
+
+    if (selectedTime == null || !mounted) return;
+
+    final pickupDate = DateTime(
+      selected.year,
+      selected.month,
+      selected.day,
+      selectedTime.hour,
+      selectedTime.minute,
+    );
+
+    if (pickupDate.isBefore(DateTime.now())) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Tanggal dan jam harus di masa depan.'),
+        ),
+      );
+      return;
+    }
+
+    final success = await context.read<OrderProvider>()
+        .updatePickupDate(
+          orderId: orderId,
+          pickupDate: pickupDate,
+        );
+
+    if (!mounted) return;
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          success
+              ? 'Tanggal pengambilan berhasil diperbarui.'
+              : 'Gagal mengubah tanggal. Pastikan pesanan masih menunggu.',
+        ),
+      ),
+    );
+  }
+
+  Future<void> _cancelOrder(Map<String, dynamic> order) async {
+    final orderId = int.tryParse(order['id'].toString());
+    if (orderId == null) return;
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Batalkan Pesanan?'),
+        content: const Text(
+          'Apakah kamu yakin ingin membatalkan pesanan ini? '
+          'Pesanan yang sudah diproses tidak dapat dibatalkan.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: const Text('Kembali'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(dialogContext, true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+              foregroundColor: Colors.white,
+            ),
+            child: const Text('Ya, Batalkan'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true || !mounted) return;
+
+    final success = await context.read<OrderProvider>()
+        .cancelOrder(orderId);
+
+    if (!mounted) return;
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          success
+              ? 'Pesanan berhasil dibatalkan.'
+              : 'Pesanan tidak dapat dibatalkan karena statusnya sudah berubah.',
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Riwayat Pesanan'),
+        title: const Text('Pesanan Saya'),
         actions: [
           IconButton(
             tooltip: 'Muat ulang',
@@ -147,24 +254,16 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
                       color: Colors.red,
                     ),
                     const SizedBox(height: 12),
-                    const Text(
-                      'Gagal memuat riwayat pesanan.',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(fontSize: 16),
-                    ),
+                    const Text('Gagal memuat pesanan.'),
                     const SizedBox(height: 8),
                     Text(
                       provider.errorMessage!,
                       textAlign: TextAlign.center,
-                      style: const TextStyle(
-                        color: Colors.grey,
-                      ),
                     ),
-                    const SizedBox(height: 16),
-                    ElevatedButton.icon(
-                      onPressed: () => provider.loadOrders(),
-                      icon: const Icon(Icons.refresh),
-                      label: const Text('Coba Lagi'),
+                    const SizedBox(height: 12),
+                    ElevatedButton(
+                      onPressed: provider.loadOrders,
+                      child: const Text('Coba Lagi'),
                     ),
                   ],
                 ),
@@ -173,66 +272,52 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
           }
 
           if (provider.orders.isEmpty) {
-            return Center(
-              child: Padding(
-                padding: const EdgeInsets.all(24),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(
-                      Icons.receipt_long_outlined,
-                      size: 72,
-                      color: Colors.grey.shade400,
+            return const Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    Icons.receipt_long_outlined,
+                    size: 72,
+                    color: Colors.grey,
+                  ),
+                  SizedBox(height: 16),
+                  Text(
+                    'Belum Ada Pesanan',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
                     ),
-                    const SizedBox(height: 16),
-                    const Text(
-                      'Belum Ada Pesanan',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      'Pesanan yang kamu buat akan muncul di sini.',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        color: Colors.grey.shade600,
-                      ),
-                    ),
-                  ],
-                ),
+                  ),
+                  SizedBox(height: 8),
+                  Text('Pesanan kamu akan muncul di sini.'),
+                ],
               ),
             );
           }
 
           return RefreshIndicator(
-            onRefresh: () => provider.loadOrders(),
+            onRefresh: provider.loadOrders,
             child: ListView.builder(
               padding: const EdgeInsets.all(16),
               itemCount: provider.orders.length,
               itemBuilder: (context, index) {
                 final order = provider.orders[index];
-
                 final pharmacy = _asMap(order['pharmacies']);
-                final orderItems = _asMapList(order['order_items']);
-
-                final pharmacyName =
-                    pharmacy['name']?.toString() ?? 'Apotek';
+                final items = _asMapList(order['order_items']);
 
                 final status =
                     order['order_status']?.toString() ?? 'unknown';
+                final isPending = status.toLowerCase() == 'pending';
 
                 return Card(
                   margin: const EdgeInsets.only(bottom: 16),
-                  elevation: 2,
                   child: Padding(
                     padding: const EdgeInsets.all(16),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             const Icon(
                               Icons.local_pharmacy_outlined,
@@ -246,112 +331,138 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
                                     CrossAxisAlignment.start,
                                 children: [
                                   Text(
-                                    pharmacyName,
+                                    pharmacy['name']?.toString() ?? 'Apotek',
                                     style: const TextStyle(
-                                      fontSize: 16,
                                       fontWeight: FontWeight.bold,
+                                      fontSize: 16,
                                     ),
                                   ),
-                                  const SizedBox(height: 4),
                                   Text(
-                                    _formatDate(order['created_at']),
-                                    style: TextStyle(
-                                      color: Colors.grey.shade600,
+                                    'Pesanan #${order['id']}',
+                                    style: const TextStyle(
+                                      color: Colors.grey,
                                       fontSize: 12,
                                     ),
                                   ),
                                 ],
                               ),
                             ),
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 10,
-                                vertical: 6,
-                              ),
-                              decoration: BoxDecoration(
-                                color: _statusColor(status)
-                                    .withValues(alpha: 0.12),
-                                borderRadius: BorderRadius.circular(20),
-                              ),
-                              child: Text(
-                                _statusLabel(status),
-                                style: TextStyle(
-                                  color: _statusColor(status),
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w600,
-                                ),
+                            Chip(
+                              label: Text(_statusLabel(status)),
+                              backgroundColor:
+                                  _statusColor(status).withValues(alpha: 0.12),
+                              labelStyle: TextStyle(
+                                color: _statusColor(status),
+                                fontWeight: FontWeight.bold,
                               ),
                             ),
                           ],
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          'Dipesan: ${_formatDate(order['created_at'])}',
+                          style: const TextStyle(fontSize: 12),
                         ),
                         const Divider(height: 24),
                         const Text(
                           'Produk Pesanan',
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                          ),
+                          style: TextStyle(fontWeight: FontWeight.bold),
                         ),
                         const SizedBox(height: 8),
-                        if (orderItems.isEmpty)
-                          const Text(
-                            'Informasi produk tidak tersedia.',
-                            style: TextStyle(color: Colors.grey),
-                          )
-                        else
-                          ...orderItems.map((item) {
-                            final medicine =
-                                _asMap(item['medicines']);
+                        ...items.map((item) {
+                          final medicine = _asMap(item['medicines']);
 
-                            final medicineName =
-                                medicine['name']?.toString() ?? 'Produk';
-
-                            final quantity =
-                                item['quantity']?.toString() ?? '0';
-
-                            final subtotal = item['subtotal'];
-
-                            return Padding(
-                              padding: const EdgeInsets.symmetric(
-                                vertical: 5,
-                              ),
-                              child: Row(
-                                children: [
-                                  Expanded(
-                                    child: Text(medicineName),
+                          return Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 5),
+                            child: Row(
+                              children: [
+                                Expanded(
+                                  child: Text(
+                                    medicine['name']?.toString() ?? 'Produk',
                                   ),
-                                  Text('x$quantity'),
-                                  const SizedBox(width: 12),
-                                  Text(
-                                    _formatPrice(subtotal),
-                                    style: const TextStyle(
-                                      fontWeight: FontWeight.w500,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            );
-                          }),
+                                ),
+                                Text('x${item['quantity']}'),
+                                const SizedBox(width: 12),
+                                Text(_formatPrice(item['subtotal'])),
+                              ],
+                            ),
+                          );
+                        }),
                         const Divider(height: 24),
                         Row(
-                          mainAxisAlignment:
-                              MainAxisAlignment.spaceBetween,
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
                             const Text(
                               'Total Pesanan',
-                              style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                              ),
+                              style: TextStyle(fontWeight: FontWeight.bold),
                             ),
                             Text(
                               _formatPrice(order['total_price']),
                               style: const TextStyle(
-                                fontSize: 16,
                                 fontWeight: FontWeight.bold,
                                 color: Colors.pink,
+                                fontSize: 16,
                               ),
                             ),
                           ],
                         ),
+                        const SizedBox(height: 12),
+                        const Text(
+                          'Tanggal Pengambilan',
+                          style: TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                        const SizedBox(height: 5),
+                        Row(
+                          children: [
+                            const Icon(
+                              Icons.calendar_month,
+                              color: Colors.pink,
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                _formatDate(order['pickup_at']),
+                              ),
+                            ),
+                          ],
+                        ),
+                        if (isPending) ...[
+                          const SizedBox(height: 12),
+                          SizedBox(
+                            width: double.infinity,
+                            child: OutlinedButton.icon(
+                              onPressed: () => _changePickupDate(order),
+                              icon: const Icon(Icons.edit_calendar),
+                              label: const Text(
+                                'Ubah Tanggal Pengambilan',
+                              ),
+                            ),
+                          ),
+                          SizedBox(
+                            width: double.infinity,
+                            child: TextButton.icon(
+                              onPressed: () => _cancelOrder(order),
+                              icon: const Icon(
+                                Icons.cancel_outlined,
+                                color: Colors.red,
+                              ),
+                              label: const Text(
+                                'Batalkan Pesanan',
+                                style: TextStyle(color: Colors.red),
+                              ),
+                            ),
+                          ),
+                        ] else
+                          const Padding(
+                            padding: EdgeInsets.only(top: 12),
+                            child: Text(
+                              'Pesanan tidak dapat diubah pada status ini.',
+                              style: TextStyle(
+                                color: Colors.grey,
+                                fontSize: 12,
+                              ),
+                            ),
+                          ),
                       ],
                     ),
                   ),

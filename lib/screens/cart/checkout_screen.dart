@@ -5,23 +5,175 @@ import 'package:provider/provider.dart';
 import '../../providers/cart_provider.dart';
 import '../../providers/order_provider.dart';
 
-class CheckoutScreen extends StatelessWidget {
+class CheckoutScreen extends StatefulWidget {
   const CheckoutScreen({super.key});
+
+  @override
+  State<CheckoutScreen> createState() => _CheckoutScreenState();
+}
+
+class _CheckoutScreenState extends State<CheckoutScreen> {
+  DateTime? _pickupDateTime;
+
+  DateTime get _today {
+    final now = DateTime.now();
+    return DateTime(now.year, now.month, now.day);
+  }
+
+  // Batas pengambilan maksimal 14 hari dari hari pemesanan.
+  DateTime get _lastPickupDate {
+    return _today.add(const Duration(days: 14));
+  }
 
   String _formatPrice(double price) {
     return 'Rp ${price.toStringAsFixed(0)}';
   }
 
+  String _formatDate(DateTime date) {
+    const months = [
+      'Januari',
+      'Februari',
+      'Maret',
+      'April',
+      'Mei',
+      'Juni',
+      'Juli',
+      'Agustus',
+      'September',
+      'Oktober',
+      'November',
+      'Desember',
+    ];
+
+    return '${date.day} ${months[date.month - 1]} ${date.year}';
+  }
+
+  String _formatTime(DateTime date) {
+    return '${date.hour.toString().padLeft(2, '0')}:'
+        '${date.minute.toString().padLeft(2, '0')}';
+  }
+
+  Future<void> _selectPickupDate() async {
+    final selected = await showDatePicker(
+      context: context,
+      initialDate: _pickupDateTime ?? _today,
+      firstDate: _today,
+      lastDate: _lastPickupDate,
+      helpText: 'Pilih Tanggal Pengambilan',
+      cancelText: 'Batal',
+      confirmText: 'Pilih',
+    );
+
+    if (selected == null || !mounted) return;
+
+    setState(() {
+      _pickupDateTime = DateTime(
+        selected.year,
+        selected.month,
+        selected.day,
+        7,
+      );
+    });
+  }
+
+  Future<void> _selectPickupTime() async {
+    if (_pickupDateTime == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Pilih tanggal pengambilan terlebih dahulu.',
+          ),
+        ),
+      );
+      return;
+    }
+
+    final selected = await showTimePicker(
+      context: context,
+      initialTime: TimeOfDay(
+        hour: _pickupDateTime!.hour,
+        minute: _pickupDateTime!.minute,
+      ),
+      helpText: 'Pilih Jam Pengambilan',
+    );
+
+    if (selected == null || !mounted) return;
+
+    final selectedDateTime = DateTime(
+      _pickupDateTime!.year,
+      _pickupDateTime!.month,
+      _pickupDateTime!.day,
+      selected.hour,
+      selected.minute,
+    );
+
+    // Batas jam sementara: 07.00 sampai 22.00.
+    final isWithinOpeningHours =
+        (selected.hour > 7 ||
+            (selected.hour == 7 && selected.minute >= 0)) &&
+        (selected.hour < 22 ||
+            (selected.hour == 22 && selected.minute == 0));
+
+    if (!isWithinOpeningHours) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Pengambilan hanya tersedia pukul 07.00–22.00.',
+          ),
+        ),
+      );
+      return;
+    }
+
+    if (!selectedDateTime.isAfter(DateTime.now())) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Pilih waktu pengambilan yang belum lewat.',
+          ),
+        ),
+      );
+      return;
+    }
+
+    setState(() {
+      _pickupDateTime = selectedDateTime;
+    });
+  }
+
   Future<void> _confirmOrder(BuildContext context) async {
+    if (_pickupDateTime == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Silakan tentukan tanggal dan jam pengambilan.',
+          ),
+        ),
+      );
+      return;
+    }
+
+    if (!_pickupDateTime!.isAfter(DateTime.now())) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Jadwal pengambilan sudah lewat. Silakan pilih jadwal lain.',
+          ),
+        ),
+      );
+      return;
+    }
+
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (dialogContext) {
         return AlertDialog(
           title: const Text('Konfirmasi Pesanan'),
-          content: const Text(
-            'Apakah Anda yakin ingin mengonfirmasi pesanan ini? '
-            'Pesanan ini merupakan simulasi dan perlu dikonfirmasi '
-            'dalam waktu 24 jam.',
+          content: Text(
+            'Apakah Anda yakin ingin mengonfirmasi pesanan ini?\n\n'
+            'Jadwal Pengambilan:\n'
+            '${_formatDate(_pickupDateTime!)} '
+            'pukul ${_formatTime(_pickupDateTime!)}',
           ),
           actions: [
             TextButton(
@@ -46,12 +198,18 @@ class CheckoutScreen extends StatelessWidget {
     final cart = context.read<CartProvider>();
     final orderProvider = context.read<OrderProvider>();
 
-    final success = await orderProvider.createOrder(cart);
+    final success = await orderProvider.createOrder(
+      cart,
+      pickupDate: _pickupDateTime!,
+    );
 
     if (!context.mounted) return;
 
     if (success) {
-      final order = orderProvider.lastOrder;
+  // Kosongkan keranjang setelah pesanan berhasil disimpan.
+  cart.clearCart();
+
+  final order = orderProvider.lastOrder;
 
       final orderId = order?['id']?.toString() ?? '-';
 
@@ -80,7 +238,7 @@ class CheckoutScreen extends StatelessWidget {
                 const Text(
                   'Pesanan Anda berhasil dibuat dan tersimpan.',
                 ),
-                const SizedBox(height: 20),
+                const SizedBox(height: 16),
                 const Text(
                   'Nomor Resi',
                   style: TextStyle(
@@ -95,6 +253,22 @@ class CheckoutScreen extends StatelessWidget {
                     fontWeight: FontWeight.bold,
                     fontSize: 18,
                     color: Colors.green,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                const Text(
+                  'Jadwal Pengambilan',
+                  style: TextStyle(
+                    color: Colors.black54,
+                    fontSize: 12,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  '${_formatDate(_pickupDateTime!)} '
+                  'pukul ${_formatTime(_pickupDateTime!)}',
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
                   ),
                 ),
                 const SizedBox(height: 16),
@@ -185,7 +359,62 @@ class CheckoutScreen extends StatelessWidget {
                   subtitle: const Text('Apotek pilihan Anda'),
                 ),
               ),
+
               const SizedBox(height: 24),
+
+              const Text(
+                'Jadwal Pengambilan',
+                style: TextStyle(
+                  fontSize: 17,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 8),
+              const Text(
+                'Pilih tanggal pengambilan maksimal '
+                '14 hari sejak tanggal pemesanan.',
+                style: TextStyle(color: Colors.black54),
+              ),
+              const SizedBox(height: 12),
+
+              Card(
+                child: Column(
+                  children: [
+                    ListTile(
+                      leading: const Icon(
+                        Icons.calendar_month,
+                        color: Colors.green,
+                      ),
+                      title: const Text('Tanggal Pengambilan'),
+                      subtitle: Text(
+                        _pickupDateTime == null
+                            ? 'Belum dipilih'
+                            : _formatDate(_pickupDateTime!),
+                      ),
+                      trailing: const Icon(Icons.chevron_right),
+                      onTap: _selectPickupDate,
+                    ),
+                    const Divider(height: 1),
+                    ListTile(
+                      leading: const Icon(
+                        Icons.access_time,
+                        color: Colors.green,
+                      ),
+                      title: const Text('Jam Pengambilan'),
+                      subtitle: Text(
+                        _pickupDateTime == null
+                            ? 'Belum dipilih'
+                            : _formatTime(_pickupDateTime!),
+                      ),
+                      trailing: const Icon(Icons.chevron_right),
+                      onTap: _selectPickupTime,
+                    ),
+                  ],
+                ),
+              ),
+
+              const SizedBox(height: 24),
+
               const Text(
                 'Ringkasan Produk',
                 style: TextStyle(
@@ -194,6 +423,7 @@ class CheckoutScreen extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 10),
+
               ...cart.items.map(
                 (item) => Card(
                   child: ListTile(
@@ -211,17 +441,16 @@ class CheckoutScreen extends StatelessWidget {
                   ),
                 ),
               ),
+
               const SizedBox(height: 20),
+
               Card(
                 color: Colors.green.shade50,
                 child: Padding(
                   padding: const EdgeInsets.all(16),
                   child: Column(
                     children: [
-                      const Text(
-                        'Total Pesanan',
-                        style: TextStyle(fontSize: 14),
-                      ),
+                      const Text('Total Pesanan'),
                       const SizedBox(height: 8),
                       Text(
                         _formatPrice(cart.totalPrice),
@@ -235,7 +464,9 @@ class CheckoutScreen extends StatelessWidget {
                   ),
                 ),
               ),
+
               const SizedBox(height: 16),
+
               Container(
                 padding: const EdgeInsets.all(14),
                 decoration: BoxDecoration(
@@ -243,13 +474,15 @@ class CheckoutScreen extends StatelessWidget {
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: const Text(
-                  'Catatan: Ini merupakan pemesanan simulasi. '
-                  'Pesanan perlu dikonfirmasi dalam waktu 24 jam. '
-                  'Belum ada transaksi atau pengambilan sungguhan.',
+                  'Catatan: Pesanan ini merupakan simulasi. '
+                  'Pastikan Anda mengambil pesanan sesuai '
+                  'jadwal yang telah dipilih.',
                   style: TextStyle(fontSize: 12),
                 ),
               ),
+
               const SizedBox(height: 24),
+
               Consumer<OrderProvider>(
                 builder: (context, orderProvider, child) {
                   return ElevatedButton(

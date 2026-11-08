@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../providers/cart_provider.dart';
+import '../orders/order_history_screen.dart';
 import 'checkout_screen.dart';
 
 class CartScreen extends StatelessWidget {
@@ -10,6 +11,15 @@ class CartScreen extends StatelessWidget {
 
   String _formatPrice(double price) {
     return 'Rp ${price.toStringAsFixed(0)}';
+  }
+
+  void _openOrderHistory(BuildContext context) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => const OrderHistoryScreen(),
+      ),
+    );
   }
 
   Future<void> _confirmRemove(
@@ -59,6 +69,65 @@ class CartScreen extends StatelessWidget {
     }
   }
 
+  Widget _buildOrderHistoryButton(BuildContext context) {
+    return InkWell(
+      onTap: () => _openOrderHistory(context),
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(
+          horizontal: 14,
+          vertical: 12,
+        ),
+        decoration: BoxDecoration(
+          color: Colors.pink.shade50,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: Colors.pink.shade100,
+          ),
+        ),
+        child: Row(
+          children: [
+            const Icon(
+              Icons.receipt_long_outlined,
+              color: Colors.pink,
+              size: 25,
+            ),
+            const SizedBox(width: 12),
+            const Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Cek Pesanan Anda',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 14,
+                      color: Colors.pink,
+                    ),
+                  ),
+                  SizedBox(height: 3),
+                  Text(
+                    'Lihat status dan riwayat pesanan',
+                    style: TextStyle(
+                      fontSize: 11,
+                      color: Colors.black54,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Icon(
+              Icons.arrow_forward_ios,
+              size: 16,
+              color: Colors.pink.shade700,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -68,34 +137,35 @@ class CartScreen extends StatelessWidget {
       body: Consumer<CartProvider>(
         builder: (context, cart, child) {
           if (cart.isEmpty) {
-            return const Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    Icons.shopping_cart_outlined,
-                    size: 75,
-                    color: Colors.grey,
+            return ListView(
+              padding: const EdgeInsets.all(16),
+              children: [
+                _buildOrderHistoryButton(context),
+                const SizedBox(height: 100),
+                const Icon(
+                  Icons.shopping_cart_outlined,
+                  size: 75,
+                  color: Colors.grey,
+                ),
+                const SizedBox(height: 16),
+                const Text(
+                  'Keranjang masih kosong',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 17,
+                    fontWeight: FontWeight.bold,
                   ),
-                  SizedBox(height: 16),
-                  Text(
-                    'Keranjang masih kosong',
-                    style: TextStyle(
-                      fontSize: 17,
-                      fontWeight: FontWeight.bold,
-                    ),
+                ),
+                const SizedBox(height: 8),
+                const Text(
+                  'Tambahkan produk dari apotek terlebih dahulu.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: Colors.black54,
+                    fontSize: 13,
                   ),
-                  SizedBox(height: 8),
-                  Text(
-                    'Tambahkan produk dari apotek terlebih dahulu.',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      color: Colors.black54,
-                      fontSize: 13,
-                    ),
-                  ),
-                ],
-              ),
+                ),
+              ],
             );
           }
 
@@ -105,6 +175,9 @@ class CartScreen extends StatelessWidget {
                 child: ListView(
                   padding: const EdgeInsets.all(16),
                   children: [
+                    _buildOrderHistoryButton(context),
+                    const SizedBox(height: 20),
+
                     Container(
                       padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
@@ -192,8 +265,7 @@ class CartScreen extends StatelessWidget {
                                     CrossAxisAlignment.start,
                                 children: [
                                   Container(
-                                    padding:
-                                        const EdgeInsets.all(12),
+                                    padding: const EdgeInsets.all(12),
                                     decoration: BoxDecoration(
                                       color: Colors.green.shade50,
                                       borderRadius:
@@ -214,8 +286,7 @@ class CartScreen extends StatelessWidget {
                                         Text(
                                           item.name,
                                           style: const TextStyle(
-                                            fontWeight:
-                                                FontWeight.bold,
+                                            fontWeight: FontWeight.bold,
                                             fontSize: 14,
                                           ),
                                         ),
@@ -224,8 +295,7 @@ class CartScreen extends StatelessWidget {
                                           _formatPrice(item.price),
                                           style: const TextStyle(
                                             color: Colors.green,
-                                            fontWeight:
-                                                FontWeight.bold,
+                                            fontWeight: FontWeight.bold,
                                           ),
                                         ),
                                         const SizedBox(height: 4),
@@ -287,27 +357,28 @@ class CartScreen extends StatelessWidget {
                                         ),
                                       ),
                                       IconButton(
-                                        onPressed: item.quantity >=
-                                                item.stockQuantity
-                                            ? null
-                                            : () {
-                                                final success =
-                                                    cart.increaseQuantity(
-                                                  item.medicineId,
-                                                );
+                                        onPressed:
+                                            item.quantity >=
+                                                    item.stockQuantity
+                                                ? null
+                                                : () {
+                                                    final success =
+                                                        cart.increaseQuantity(
+                                                      item.medicineId,
+                                                    );
 
-                                                if (!success) {
-                                                  ScaffoldMessenger.of(
-                                                    context,
-                                                  ).showSnackBar(
-                                                    const SnackBar(
-                                                      content: Text(
-                                                        'Jumlah sudah mencapai batas stok.',
-                                                      ),
-                                                    ),
-                                                  );
-                                                }
-                                              },
+                                                    if (!success) {
+                                                      ScaffoldMessenger.of(
+                                                        context,
+                                                      ).showSnackBar(
+                                                        const SnackBar(
+                                                          content: Text(
+                                                            'Jumlah sudah mencapai batas stok.',
+                                                          ),
+                                                        ),
+                                                      );
+                                                    }
+                                                  },
                                         icon: const Icon(
                                           Icons.add_circle_outline,
                                         ),
@@ -381,7 +452,6 @@ class CartScreen extends StatelessWidget {
                         ),
                       ),
                       const SizedBox(height: 16),
-
                       SizedBox(
                         width: double.infinity,
                         height: 48,
