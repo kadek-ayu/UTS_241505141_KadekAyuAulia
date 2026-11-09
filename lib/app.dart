@@ -4,11 +4,14 @@ import 'package:provider/provider.dart';
 
 import 'constants/app_constants.dart';
 import 'constants/app_theme.dart';
+
 import 'providers/medicine_provider.dart';
 import 'providers/openfda_provider.dart';
 import 'providers/favorite_provider.dart';
 import 'providers/cart_provider.dart';
 import 'providers/order_provider.dart';
+import 'providers/profile_provider.dart';
+
 import 'screens/main_navigation_screen.dart';
 
 class ApoTechApp extends StatelessWidget {
@@ -32,6 +35,9 @@ class ApoTechApp extends StatelessWidget {
         ),
         ChangeNotifierProvider(
           create: (_) => OrderProvider(),
+        ),
+        ChangeNotifierProvider(
+          create: (_) => ProfileProvider()..loadProfile(),
         ),
       ],
       child: MaterialApp(

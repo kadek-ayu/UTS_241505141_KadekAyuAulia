@@ -1,6 +1,6 @@
-﻿
-
-// ===== FILE: C:\Users\putu\Desktop\project flutter\apotech_flutter_uts\lib\app.dart =====
+﻿==================================================
+FILE: lib\app.dart
+==================================================
 
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -47,29 +47,9 @@ class ApoTechApp extends StatelessWidget {
   }
 }
 
-
-
-// ===== FILE: C:\Users\putu\Desktop\project flutter\apotech_flutter_uts\lib\main.dart =====
-
-import 'package:flutter/material.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
-
-import 'app.dart';
-
-Future<void> main() async {
-  WidgetsFlutterBinding.ensureInitialized();
-
-  await Supabase.initialize(
-    url: 'https://qxcmokdvxsxnldwjymag.supabase.co',
-    publishableKey: 'sb_publishable_qMVxCmv2viF3gfewomBXnw_-_DmLTYV',
-  );
-
-  runApp(const ApoTechApp());
-}
-
-
-
-// ===== FILE: C:\Users\putu\Desktop\project flutter\apotech_flutter_uts\lib\constants\app_constants.dart =====
+==================================================
+FILE: lib\constants\app_constants.dart
+==================================================
 
 class AppConstants {
   static const String appName = 'ApoTech';
@@ -79,9 +59,9 @@ class AppConstants {
   static const String medicineTable = 'medicines';
 }
 
-
-
-// ===== FILE: C:\Users\putu\Desktop\project flutter\apotech_flutter_uts\lib\constants\app_theme.dart =====
+==================================================
+FILE: lib\constants\app_theme.dart
+==================================================
 
 import 'package:flutter/material.dart';
 
@@ -111,9 +91,29 @@ class AppTheme {
   }
 }
 
+==================================================
+FILE: lib\main.dart
+==================================================
 
+import 'package:flutter/material.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
-// ===== FILE: C:\Users\putu\Desktop\project flutter\apotech_flutter_uts\lib\models\medicine.dart =====
+import 'app.dart';
+
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  await Supabase.initialize(
+    url: 'https://qxcmokdvxsxnldwjymag.supabase.co',
+    publishableKey: 'sb_publishable_qMVxCmv2viF3gfewomBXnw_-_DmLTYV',
+  );
+
+  runApp(const ApoTechApp());
+}
+
+==================================================
+FILE: lib\models\medicine.dart
+==================================================
 
 class Medicine {
   final int? id;
@@ -159,9 +159,9 @@ class Medicine {
   }
 }
 
-
-
-// ===== FILE: C:\Users\putu\Desktop\project flutter\apotech_flutter_uts\lib\models\openfda_product.dart =====
+==================================================
+FILE: lib\models\openfda_product.dart
+==================================================
 
 class OpenFdaProduct {
   final String productNdc;
@@ -208,9 +208,9 @@ class OpenFdaProduct {
   }
 }
 
-
-
-// ===== FILE: C:\Users\putu\Desktop\project flutter\apotech_flutter_uts\lib\models\order.dart =====
+==================================================
+FILE: lib\models\order.dart
+==================================================
 
 class Order {
   final int id;
@@ -238,9 +238,9 @@ class Order {
   }
 }
 
-
-
-// ===== FILE: C:\Users\putu\Desktop\project flutter\apotech_flutter_uts\lib\providers\cart_provider.dart =====
+==================================================
+FILE: lib\providers\cart_provider.dart
+==================================================
 
 import 'package:flutter/foundation.dart';
 
@@ -409,9 +409,9 @@ class CartProvider extends ChangeNotifier {
   }
 }
 
-
-
-// ===== FILE: C:\Users\putu\Desktop\project flutter\apotech_flutter_uts\lib\providers\favorite_provider.dart =====
+==================================================
+FILE: lib\providers\favorite_provider.dart
+==================================================
 import 'package:flutter/material.dart';
 
 import '../models/openfda_product.dart';
@@ -453,8 +453,9 @@ class FavoriteProvider extends ChangeNotifier {
   }
 }
 
-
-// ===== FILE: C:\Users\putu\Desktop\project flutter\apotech_flutter_uts\lib\providers\medicine_provider.dart =====
+==================================================
+FILE: lib\providers\medicine_provider.dart
+==================================================
 
 import 'package:flutter/material.dart';
 
@@ -492,9 +493,9 @@ class MedicineProvider extends ChangeNotifier {
   }
 }
 
-
-
-// ===== FILE: C:\Users\putu\Desktop\project flutter\apotech_flutter_uts\lib\providers\openfda_provider.dart =====
+==================================================
+FILE: lib\providers\openfda_provider.dart
+==================================================
 
 import 'package:flutter/material.dart';
 
@@ -532,9 +533,9 @@ class OpenFdaProvider extends ChangeNotifier {
   }
 }
 
-
-
-// ===== FILE: C:\Users\putu\Desktop\project flutter\apotech_flutter_uts\lib\providers\order_provider.dart =====
+==================================================
+FILE: lib\providers\order_provider.dart
+==================================================
 
 import 'package:flutter/foundation.dart';
 
@@ -593,9 +594,9 @@ class OrderProvider extends ChangeNotifier {
   }
 }
 
-
-
-// ===== FILE: C:\Users\putu\Desktop\project flutter\apotech_flutter_uts\lib\repositories\medicine_repository.dart =====
+==================================================
+FILE: lib\repositories\medicine_repository.dart
+==================================================
 
 import '../models/medicine.dart';
 import '../services/local_medicine_service.dart';
@@ -612,9 +613,9 @@ class MedicineRepository {
   }
 }
 
-
-
-// ===== FILE: C:\Users\putu\Desktop\project flutter\apotech_flutter_uts\lib\repositories\openfda_repository.dart =====
+==================================================
+FILE: lib\repositories\openfda_repository.dart
+==================================================
 
 import '../models/openfda_product.dart';
 import '../services/openfda_service.dart';
@@ -631,232 +632,9 @@ class OpenFdaRepository {
   }
 }
 
-
-
-// ===== FILE: C:\Users\putu\Desktop\project flutter\apotech_flutter_uts\lib\screens\main_navigation_screen.dart =====
-
-import 'package:flutter/material.dart';
-
-import 'home/home_screen.dart';
-import 'medicines/medicine_list_screen.dart';
-import 'medicines/favorite_screen.dart';
-import 'cart/cart_screen.dart';
-
-class MainNavigationScreen extends StatefulWidget {
-  const MainNavigationScreen({super.key});
-
-  @override
-  State<MainNavigationScreen> createState() =>
-      _MainNavigationScreenState();
-}
-
-class _MainNavigationScreenState
-    extends State<MainNavigationScreen> {
-  int selectedIndex = 0;
-
-  final List<Widget> pages = const [
-    HomeScreen(),
-    MedicineListScreen(),
-    FavoriteScreen(),
-    CartScreen(),
-  ];
-
-  @override
-  Widget build(BuildContext context) {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final isWideScreen = constraints.maxWidth >= 800;
-
-        if (isWideScreen) {
-          return Scaffold(
-            body: Row(
-              children: [
-                NavigationRail(
-                  selectedIndex: selectedIndex,
-                  onDestinationSelected: (index) {
-                    setState(() {
-                      selectedIndex = index;
-                    });
-                  },
-                  labelType: NavigationRailLabelType.all,
-                  destinations: const [
-                    NavigationRailDestination(
-                      icon: Icon(Icons.home_outlined),
-                      selectedIcon: Icon(Icons.home),
-                      label: Text('Home'),
-                    ),
-                    NavigationRailDestination(
-                      icon: Icon(Icons.medication_outlined),
-                      selectedIcon: Icon(Icons.medication),
-                      label: Text('Katalog'),
-                    ),
-                    NavigationRailDestination(
-                      icon: Icon(Icons.star_border),
-                      selectedIcon: Icon(Icons.star),
-                      label: Text('Tersimpan'),
-                    ),
-                    NavigationRailDestination(
-                      icon: Icon(Icons.shopping_cart_outlined),
-                      selectedIcon: Icon(Icons.shopping_cart),
-                      label: Text('Keranjang'),
-                    ),
-                  ],
-                ),
-                const VerticalDivider(width: 1),
-                Expanded(
-                  child: IndexedStack(
-                    index: selectedIndex,
-                    children: pages,
-                  ),
-                ),
-              ],
-            ),
-          );
-        }
-
-        return Scaffold(
-          body: IndexedStack(
-            index: selectedIndex,
-            children: pages,
-          ),
-          bottomNavigationBar: NavigationBar(
-            selectedIndex: selectedIndex,
-            onDestinationSelected: (index) {
-              setState(() {
-                selectedIndex = index;
-              });
-            },
-            destinations: const [
-              NavigationDestination(
-                icon: Icon(Icons.home_outlined),
-                selectedIcon: Icon(Icons.home),
-                label: 'Home',
-              ),
-              NavigationDestination(
-                icon: Icon(Icons.medication_outlined),
-                selectedIcon: Icon(Icons.medication),
-                label: 'Katalog',
-              ),
-              NavigationDestination(
-                icon: Icon(Icons.star_border),
-                selectedIcon: Icon(Icons.star),
-                label: 'Tersimpan',
-              ),
-              NavigationDestination(
-                icon: Icon(Icons.shopping_cart_outlined),
-                selectedIcon: Icon(Icons.shopping_cart),
-                label: 'Keranjang',
-              ),
-            ],
-          ),
-        );
-      },
-    );
-  }
-}
-
-
-
-// ===== FILE: C:\Users\putu\Desktop\project flutter\apotech_flutter_uts\lib\screens\openfda_test_screen.dart =====
-import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-
-import '../providers/openfda_provider.dart';
-
-class OpenFdaTestScreen extends StatelessWidget {
-  const OpenFdaTestScreen({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Pengujian OpenFDA'),
-      ),
-      body: Consumer<OpenFdaProvider>(
-        builder: (context, provider, child) {
-          return Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                const Text(
-                  'Pengujian REST API OpenFDA',
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                const Text(
-                  'Tekan tombol untuk mengambil data produk '
-                  'dari OpenFDA.',
-                ),
-                const SizedBox(height: 16),
-                ElevatedButton.icon(
-                  onPressed: provider.isLoading
-                      ? null
-                      : () => provider.loadProducts(),
-                  icon: const Icon(Icons.cloud_download),
-                  label: const Text('Uji Koneksi OpenFDA'),
-                ),
-                const SizedBox(height: 16),
-                if (provider.isLoading)
-                  const Expanded(
-                    child: Center(
-                      child: CircularProgressIndicator(),
-                    ),
-                  )
-                else if (provider.errorMessage != null)
-                  Expanded(
-                    child: Center(
-                      child: Text(provider.errorMessage!),
-                    ),
-                  )
-                else if (provider.products.isEmpty)
-                  const Expanded(
-                    child: Center(
-                      child: Text(
-                        'Belum ada data. Tekan tombol pengujian.',
-                      ),
-                    ),
-                  )
-                else
-                  Expanded(
-                    child: ListView.builder(
-                      itemCount: provider.products.length,
-                      itemBuilder: (context, index) {
-                        final product = provider.products[index];
-
-                        return Card(
-                          margin: const EdgeInsets.only(bottom: 12),
-                          child: ListTile(
-                            title: Text(
-                              product.brandName.isNotEmpty
-                                  ? product.brandName
-                                  : product.genericName,
-                            ),
-                            subtitle: Text(
-                              'Nama generik: ${product.genericName}\n'
-                              'Produsen: ${product.manufacturer}\n'
-                              'NDC: ${product.productNdc}',
-                            ),
-                            isThreeLine: true,
-                          ),
-                        );
-                      },
-                    ),
-                  ),
-              ],
-            ),
-          );
-        },
-      ),
-    );
-  }
-}
-
-
-// ===== FILE: C:\Users\putu\Desktop\project flutter\apotech_flutter_uts\lib\screens\cart\cart_screen.dart =====
+==================================================
+FILE: lib\screens\cart\cart_screen.dart
+==================================================
 
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -1274,9 +1052,9 @@ class CartScreen extends StatelessWidget {
   }
 }
 
-
-
-// ===== FILE: C:\Users\putu\Desktop\project flutter\apotech_flutter_uts\lib\screens\cart\checkout_screen.dart =====
+==================================================
+FILE: lib\screens\cart\checkout_screen.dart
+==================================================
 
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -1555,9 +1333,9 @@ class CheckoutScreen extends StatelessWidget {
   }
 }
 
-
-
-// ===== FILE: C:\Users\putu\Desktop\project flutter\apotech_flutter_uts\lib\screens\health\health_information_screen.dart =====
+==================================================
+FILE: lib\screens\health\health_information_screen.dart
+==================================================
 
 import 'package:flutter/material.dart';
 
@@ -1584,9 +1362,9 @@ class HealthInformationScreen extends StatelessWidget {
 }
 
 
-
-
-// ===== FILE: C:\Users\putu\Desktop\project flutter\apotech_flutter_uts\lib\screens\home\home_screen.dart =====
+==================================================
+FILE: lib\screens\home\home_screen.dart
+==================================================
 
 import 'package:flutter/material.dart';
 
@@ -1889,9 +1667,145 @@ class HomeScreen extends StatelessWidget {
   }
 }
 
+==================================================
+FILE: lib\screens\main_navigation_screen.dart
+==================================================
 
+import 'package:flutter/material.dart';
 
-// ===== FILE: C:\Users\putu\Desktop\project flutter\apotech_flutter_uts\lib\screens\medicines\favorite_screen.dart =====
+import 'home/home_screen.dart';
+import 'medicines/medicine_list_screen.dart';
+import 'medicines/favorite_screen.dart';
+import 'cart/cart_screen.dart';
+import 'orders/order_history_screen.dart';
+
+class MainNavigationScreen extends StatefulWidget {
+  const MainNavigationScreen({super.key});
+
+  @override
+  State<MainNavigationScreen> createState() =>
+      _MainNavigationScreenState();
+}
+
+class _MainNavigationScreenState
+    extends State<MainNavigationScreen> {
+  int selectedIndex = 0;
+
+  final List<Widget> pages = const [
+    HomeScreen(),
+    MedicineListScreen(),
+    FavoriteScreen(),
+    CartScreen(),
+    OrderHistoryScreen(),
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final isWideScreen = constraints.maxWidth >= 800;
+
+        if (isWideScreen) {
+          return Scaffold(
+            body: Row(
+              children: [
+                NavigationRail(
+                  selectedIndex: selectedIndex,
+                  onDestinationSelected: (index) {
+                    setState(() {
+                      selectedIndex = index;
+                    });
+                  },
+                  labelType: NavigationRailLabelType.all,
+                  destinations: const [
+                    NavigationRailDestination(
+                      icon: Icon(Icons.home_outlined),
+                      selectedIcon: Icon(Icons.home),
+                      label: Text('Home'),
+                    ),
+                    NavigationRailDestination(
+                      icon: Icon(Icons.medication_outlined),
+                      selectedIcon: Icon(Icons.medication),
+                      label: Text('Katalog'),
+                    ),
+                    NavigationRailDestination(
+                      icon: Icon(Icons.star_border),
+                      selectedIcon: Icon(Icons.star),
+                      label: Text('Tersimpan'),
+                    ),
+                    NavigationRailDestination(
+                      icon: Icon(Icons.shopping_cart_outlined),
+                      selectedIcon: Icon(Icons.shopping_cart),
+                      label: Text('Keranjang'),
+                    ),
+                    NavigationRailDestination(
+                      icon: Icon(Icons.history_outlined),
+                      selectedIcon: Icon(Icons.history),
+                      label: Text('Riwayat'),
+                    ),
+                  ],
+                ),
+                const VerticalDivider(width: 1),
+                Expanded(
+                  child: IndexedStack(
+                    index: selectedIndex,
+                    children: pages,
+                  ),
+                ),
+              ],
+            ),
+          );
+        }
+
+        return Scaffold(
+          body: IndexedStack(
+            index: selectedIndex,
+            children: pages,
+          ),
+          bottomNavigationBar: NavigationBar(
+            selectedIndex: selectedIndex,
+            onDestinationSelected: (index) {
+              setState(() {
+                selectedIndex = index;
+              });
+            },
+            destinations: const [
+              NavigationDestination(
+                icon: Icon(Icons.home_outlined),
+                selectedIcon: Icon(Icons.home),
+                label: 'Home',
+              ),
+              NavigationDestination(
+                icon: Icon(Icons.medication_outlined),
+                selectedIcon: Icon(Icons.medication),
+                label: 'Katalog',
+              ),
+              NavigationDestination(
+                icon: Icon(Icons.star_border),
+                selectedIcon: Icon(Icons.star),
+                label: 'Tersimpan',
+              ),
+              NavigationDestination(
+                icon: Icon(Icons.shopping_cart_outlined),
+                selectedIcon: Icon(Icons.shopping_cart),
+                label: 'Keranjang',
+              ),
+              NavigationDestination(
+                icon: Icon(Icons.history_outlined),
+                selectedIcon: Icon(Icons.history),
+                label: 'Riwayat',
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+}
+
+==================================================
+FILE: lib\screens\medicines\favorite_screen.dart
+==================================================
 
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -2040,9 +1954,9 @@ class FavoriteScreen extends StatelessWidget {
   }
 }
 
-
-
-// ===== FILE: C:\Users\putu\Desktop\project flutter\apotech_flutter_uts\lib\screens\medicines\medicine_detail_screen.dart =====
+==================================================
+FILE: lib\screens\medicines\medicine_detail_screen.dart
+==================================================
 
 import 'package:flutter/material.dart';
 
@@ -2231,9 +2145,9 @@ class _MedicineDetailScreenState
   }
 }
 
-
-
-// ===== FILE: C:\Users\putu\Desktop\project flutter\apotech_flutter_uts\lib\screens\medicines\medicine_list_screen.dart =====
+==================================================
+FILE: lib\screens\medicines\medicine_list_screen.dart
+==================================================
 
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -2552,9 +2466,9 @@ class _MedicineListScreenState extends State<MedicineListScreen> {
   }
 }
 
-
-
-// ===== FILE: C:\Users\putu\Desktop\project flutter\apotech_flutter_uts\lib\screens\medicines\openfda_product_detail_screen.dart =====
+==================================================
+FILE: lib\screens\medicines\openfda_product_detail_screen.dart
+==================================================
 
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -2841,9 +2755,479 @@ class OpenFdaProductDetailScreen extends StatelessWidget {
   }
 }
 
+==================================================
+FILE: lib\screens\openfda_test_screen.dart
+==================================================
+import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
+import '../providers/openfda_provider.dart';
 
-// ===== FILE: C:\Users\putu\Desktop\project flutter\apotech_flutter_uts\lib\screens\pharmacies\pharmacy_detail_screen.dart =====
+class OpenFdaTestScreen extends StatelessWidget {
+  const OpenFdaTestScreen({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Pengujian OpenFDA'),
+      ),
+      body: Consumer<OpenFdaProvider>(
+        builder: (context, provider, child) {
+          return Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                const Text(
+                  'Pengujian REST API OpenFDA',
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                const Text(
+                  'Tekan tombol untuk mengambil data produk '
+                  'dari OpenFDA.',
+                ),
+                const SizedBox(height: 16),
+                ElevatedButton.icon(
+                  onPressed: provider.isLoading
+                      ? null
+                      : () => provider.loadProducts(),
+                  icon: const Icon(Icons.cloud_download),
+                  label: const Text('Uji Koneksi OpenFDA'),
+                ),
+                const SizedBox(height: 16),
+                if (provider.isLoading)
+                  const Expanded(
+                    child: Center(
+                      child: CircularProgressIndicator(),
+                    ),
+                  )
+                else if (provider.errorMessage != null)
+                  Expanded(
+                    child: Center(
+                      child: Text(provider.errorMessage!),
+                    ),
+                  )
+                else if (provider.products.isEmpty)
+                  const Expanded(
+                    child: Center(
+                      child: Text(
+                        'Belum ada data. Tekan tombol pengujian.',
+                      ),
+                    ),
+                  )
+                else
+                  Expanded(
+                    child: ListView.builder(
+                      itemCount: provider.products.length,
+                      itemBuilder: (context, index) {
+                        final product = provider.products[index];
+
+                        return Card(
+                          margin: const EdgeInsets.only(bottom: 12),
+                          child: ListTile(
+                            title: Text(
+                              product.brandName.isNotEmpty
+                                  ? product.brandName
+                                  : product.genericName,
+                            ),
+                            subtitle: Text(
+                              'Nama generik: ${product.genericName}\n'
+                              'Produsen: ${product.manufacturer}\n'
+                              'NDC: ${product.productNdc}',
+                            ),
+                            isThreeLine: true,
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+              ],
+            ),
+          );
+        },
+      ),
+    );
+  }
+}
+
+==================================================
+FILE: lib\screens\orders\order_history_screen.dart
+==================================================
+
+import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+
+import '../../providers/order_provider.dart';
+
+class OrderHistoryScreen extends StatefulWidget {
+  const OrderHistoryScreen({super.key});
+
+  @override
+  State<OrderHistoryScreen> createState() =>
+      _OrderHistoryScreenState();
+}
+
+class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
+  @override
+  void initState() {
+    super.initState();
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        context.read<OrderProvider>().loadOrders();
+      }
+    });
+  }
+
+  String _formatPrice(dynamic price) {
+    final value = double.tryParse(price.toString()) ?? 0;
+
+    return 'Rp ${value.toStringAsFixed(0).replaceAllMapped(
+          RegExp(r'(\d)(?=(\d{3})+(?!\d))'),
+          (match) => '${match[1]}.',
+        )}';
+  }
+
+  String _formatDate(dynamic date) {
+    final parsedDate = DateTime.tryParse(date.toString());
+
+    if (parsedDate == null) return '-';
+
+    final localDate = parsedDate.toLocal();
+
+    const months = [
+      'Januari',
+      'Februari',
+      'Maret',
+      'April',
+      'Mei',
+      'Juni',
+      'Juli',
+      'Agustus',
+      'September',
+      'Oktober',
+      'November',
+      'Desember',
+    ];
+
+    return '${localDate.day} ${months[localDate.month - 1]} '
+        '${localDate.year}, '
+        '${localDate.hour.toString().padLeft(2, '0')}:'
+        '${localDate.minute.toString().padLeft(2, '0')}';
+  }
+
+  Map<String, dynamic> _asMap(dynamic value) {
+    if (value is Map) {
+      return Map<String, dynamic>.from(value);
+    }
+
+    return {};
+  }
+
+  List<Map<String, dynamic>> _asMapList(dynamic value) {
+    if (value is List) {
+      return value
+          .whereType<Map>()
+          .map((item) => Map<String, dynamic>.from(item))
+          .toList();
+    }
+
+    return [];
+  }
+
+  String _statusLabel(String status) {
+    switch (status.toLowerCase()) {
+      case 'pending':
+        return 'Menunggu';
+      case 'processing':
+        return 'Diproses';
+      case 'completed':
+        return 'Selesai';
+      case 'cancelled':
+        return 'Dibatalkan';
+      default:
+        return status;
+    }
+  }
+
+  Color _statusColor(String status) {
+    switch (status.toLowerCase()) {
+      case 'completed':
+        return Colors.green;
+      case 'cancelled':
+        return Colors.red;
+      case 'processing':
+        return Colors.blue;
+      case 'pending':
+        return Colors.orange;
+      default:
+        return Colors.grey;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Riwayat Pesanan'),
+        actions: [
+          IconButton(
+            tooltip: 'Muat ulang',
+            onPressed: () {
+              context.read<OrderProvider>().loadOrders();
+            },
+            icon: const Icon(Icons.refresh),
+          ),
+        ],
+      ),
+      body: Consumer<OrderProvider>(
+        builder: (context, provider, child) {
+          if (provider.isLoading && provider.orders.isEmpty) {
+            return const Center(
+              child: CircularProgressIndicator(),
+            );
+          }
+
+          if (provider.errorMessage != null &&
+              provider.orders.isEmpty) {
+            return Center(
+              child: Padding(
+                padding: const EdgeInsets.all(24),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(
+                      Icons.error_outline,
+                      size: 48,
+                      color: Colors.red,
+                    ),
+                    const SizedBox(height: 12),
+                    const Text(
+                      'Gagal memuat riwayat pesanan.',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(fontSize: 16),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      provider.errorMessage!,
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                        color: Colors.grey,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    ElevatedButton.icon(
+                      onPressed: () => provider.loadOrders(),
+                      icon: const Icon(Icons.refresh),
+                      label: const Text('Coba Lagi'),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          }
+
+          if (provider.orders.isEmpty) {
+            return Center(
+              child: Padding(
+                padding: const EdgeInsets.all(24),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      Icons.receipt_long_outlined,
+                      size: 72,
+                      color: Colors.grey.shade400,
+                    ),
+                    const SizedBox(height: 16),
+                    const Text(
+                      'Belum Ada Pesanan',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Pesanan yang kamu buat akan muncul di sini.',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        color: Colors.grey.shade600,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          }
+
+          return RefreshIndicator(
+            onRefresh: () => provider.loadOrders(),
+            child: ListView.builder(
+              padding: const EdgeInsets.all(16),
+              itemCount: provider.orders.length,
+              itemBuilder: (context, index) {
+                final order = provider.orders[index];
+
+                final pharmacy = _asMap(order['pharmacies']);
+                final orderItems = _asMapList(order['order_items']);
+
+                final pharmacyName =
+                    pharmacy['name']?.toString() ?? 'Apotek';
+
+                final status =
+                    order['order_status']?.toString() ?? 'unknown';
+
+                return Card(
+                  margin: const EdgeInsets.only(bottom: 16),
+                  elevation: 2,
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Icon(
+                              Icons.local_pharmacy_outlined,
+                              color: Colors.pink,
+                              size: 28,
+                            ),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment:
+                                    CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    pharmacyName,
+                                    style: const TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    _formatDate(order['created_at']),
+                                    style: TextStyle(
+                                      color: Colors.grey.shade600,
+                                      fontSize: 12,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 10,
+                                vertical: 6,
+                              ),
+                              decoration: BoxDecoration(
+                                color: _statusColor(status)
+                                    .withValues(alpha: 0.12),
+                                borderRadius: BorderRadius.circular(20),
+                              ),
+                              child: Text(
+                                _statusLabel(status),
+                                style: TextStyle(
+                                  color: _statusColor(status),
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const Divider(height: 24),
+                        const Text(
+                          'Produk Pesanan',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        if (orderItems.isEmpty)
+                          const Text(
+                            'Informasi produk tidak tersedia.',
+                            style: TextStyle(color: Colors.grey),
+                          )
+                        else
+                          ...orderItems.map((item) {
+                            final medicine =
+                                _asMap(item['medicines']);
+
+                            final medicineName =
+                                medicine['name']?.toString() ?? 'Produk';
+
+                            final quantity =
+                                item['quantity']?.toString() ?? '0';
+
+                            final subtotal = item['subtotal'];
+
+                            return Padding(
+                              padding: const EdgeInsets.symmetric(
+                                vertical: 5,
+                              ),
+                              child: Row(
+                                children: [
+                                  Expanded(
+                                    child: Text(medicineName),
+                                  ),
+                                  Text('x$quantity'),
+                                  const SizedBox(width: 12),
+                                  Text(
+                                    _formatPrice(subtotal),
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            );
+                          }),
+                        const Divider(height: 24),
+                        Row(
+                          mainAxisAlignment:
+                              MainAxisAlignment.spaceBetween,
+                          children: [
+                            const Text(
+                              'Total Pesanan',
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            Text(
+                              _formatPrice(order['total_price']),
+                              style: const TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.pink,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              },
+            ),
+          );
+        },
+      ),
+    );
+  }
+}
+
+==================================================
+FILE: lib\screens\pharmacies\pharmacy_detail_screen.dart
+==================================================
 
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -3356,9 +3740,9 @@ class PharmacyDetailScreen extends StatelessWidget {
   }
 }
 
-
-
-// ===== FILE: C:\Users\putu\Desktop\project flutter\apotech_flutter_uts\lib\screens\pharmacies\pharmacy_list_screen.dart =====
+==================================================
+FILE: lib\screens\pharmacies\pharmacy_list_screen.dart
+==================================================
 
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -3699,9 +4083,9 @@ class _PharmacyListScreenState extends State<PharmacyListScreen> {
   }
 }
 
-
-
-// ===== FILE: C:\Users\putu\Desktop\project flutter\apotech_flutter_uts\lib\services\local_medicine_service.dart =====
+==================================================
+FILE: lib\services\local_medicine_service.dart
+==================================================
 
 import '../models/medicine.dart';
 
@@ -3744,9 +4128,9 @@ class LocalMedicineService {
   }
 }
 
-
-
-// ===== FILE: C:\Users\putu\Desktop\project flutter\apotech_flutter_uts\lib\services\openfda_inventory_service.dart =====
+==================================================
+FILE: lib\services\openfda_inventory_service.dart
+==================================================
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../models/openfda_product.dart';
@@ -3790,8 +4174,9 @@ class OpenFdaInventoryService {
   }
 }
 
-
-// ===== FILE: C:\Users\putu\Desktop\project flutter\apotech_flutter_uts\lib\services\openfda_service.dart =====
+==================================================
+FILE: lib\services\openfda_service.dart
+==================================================
 
 import 'dart:convert';
 
@@ -3836,9 +4221,9 @@ class OpenFdaService {
   }
 }
 
-
-
-// ===== FILE: C:\Users\putu\Desktop\project flutter\apotech_flutter_uts\lib\services\order_service.dart =====
+==================================================
+FILE: lib\services\order_service.dart
+==================================================
 
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -3924,3 +4309,97 @@ class OrderService {
   }
 }
 
+
+===== FILE: pubspec.yaml =====
+name: apotech_flutter_uts
+description: "A new Flutter project."
+# The following line prevents the package from being accidentally published to
+# pub.dev using `flutter pub publish`. This is preferred for private packages.
+publish_to: 'none' # Remove this line if you wish to publish to pub.dev
+
+# The following defines the version and build number for your application.
+# A version number is three numbers separated by dots, like 1.2.43
+# followed by an optional build number separated by a +.
+# Both the version and the builder number may be overridden in flutter
+# build by specifying --build-name and --build-number, respectively.
+# In Android, build-name is used as versionName while build-number used as versionCode.
+# Read more about Android versioning at https://developer.android.com/studio/publish/versioning
+# In iOS, build-name is used as CFBundleShortVersionString while build-number is used as CFBundleVersion.
+# Read more about iOS versioning at
+# https://developer.apple.com/library/archive/documentation/General/Reference/InfoPlistKeyReference/Articles/CoreFoundationKeys.html
+# In Windows, build-name is used as the major, minor, and patch parts
+# of the product and file versions while build-number is used as the build suffix.
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.13.2
+
+# Dependencies specify other packages that your package needs in order to work.
+# To automatically upgrade your package dependencies to the latest versions
+# consider running `flutter pub upgrade --major-versions`. Alternatively,
+# dependencies can be manually updated by changing the version numbers below to
+# the latest version available on pub.dev. To see which dependencies have newer
+# versions available, run `flutter pub outdated`.
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # The following adds the Cupertino Icons font to your application.
+  # Use with the CupertinoIcons class for iOS style icons.
+  cupertino_icons: ^1.0.8
+  provider: ^6.1.5+1
+  http: ^1.6.0
+  supabase_flutter: ^2.18.3
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+
+  # The "flutter_lints" package below contains a set of recommended lints to
+  # encourage good coding practices. The lint set provided by the package is
+  # activated in the `analysis_options.yaml` file located at the root of your
+  # package. See that file for information about deactivating specific lint
+  # rules and activating additional ones.
+  flutter_lints: ^6.0.0
+
+# For information on the generic Dart part of this file, see the
+# following page: https://dart.dev/tools/pub/pubspec
+
+# The following section is specific to Flutter packages.
+flutter:
+
+  # The following line ensures that the Material Icons font is
+  # included with your application, so that you can use the icons in
+  # the material Icons class.
+  uses-material-design: true
+
+  # To add assets to your application, add an assets section, like this:
+  # assets:
+  #   - images/a_dot_burr.jpeg
+  #   - images/a_dot_ham.jpeg
+
+  # An image asset can refer to one or more resolution-specific "variants", see
+  # https://flutter.dev/to/resolution-aware-images
+
+  # For details regarding adding assets from package dependencies, see
+  # https://flutter.dev/to/asset-from-package
+
+  # To add custom fonts to your application, add a fonts section here,
+  # in this "flutter" section. Each entry in this list should have a
+  # "family" key with the font family name, and a "fonts" key with a
+  # list giving the asset and other descriptors for the font. For
+  # example:
+  # fonts:
+  #   - family: Schyler
+  #     fonts:
+  #       - asset: fonts/Schyler-Regular.ttf
+  #       - asset: fonts/Schyler-Italic.ttf
+  #         style: italic
+  #   - family: Trajan Pro
+  #     fonts:
+  #       - asset: fonts/TrajanPro.ttf
+  #       - asset: fonts/TrajanPro_Bold.ttf
+  #         weight: 700
+  #
+  # For details regarding fonts from package dependencies,
+  # see https://flutter.dev/to/font-from-package
