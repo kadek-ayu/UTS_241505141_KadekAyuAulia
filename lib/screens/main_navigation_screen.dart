@@ -1,6 +1,7 @@
 
 import 'package:flutter/material.dart';
 
+import '../widgets/responsive_content.dart';
 import 'home/home_screen.dart';
 import 'medicines/medicine_list_screen.dart';
 import 'medicines/favorite_screen.dart';
@@ -27,11 +28,26 @@ class _MainNavigationScreenState
     ProfileScreen(),
   ];
 
+  void _changePage(int index) {
+    setState(() {
+      selectedIndex = index;
+    });
+  }
+
+  Widget _buildPageContent() {
+    return ResponsiveContent(
+      child: IndexedStack(
+        index: selectedIndex,
+        children: pages,
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return LayoutBuilder(
       builder: (context, constraints) {
-        final isWideScreen = constraints.maxWidth >= 800;
+        final isWideScreen = constraints.maxWidth >= 1000;
 
         if (isWideScreen) {
           return Scaffold(
@@ -39,12 +55,8 @@ class _MainNavigationScreenState
               children: [
                 NavigationRail(
                   selectedIndex: selectedIndex,
-                  onDestinationSelected: (index) {
-                    setState(() {
-                      selectedIndex = index;
-                    });
-                  },
-                  labelType: NavigationRailLabelType.all,
+                  onDestinationSelected: _changePage,
+                  labelType: NavigationRailLabelType.selected,
                   destinations: const [
                     NavigationRailDestination(
                       icon: Icon(Icons.home_outlined),
@@ -75,10 +87,7 @@ class _MainNavigationScreenState
                 ),
                 const VerticalDivider(width: 1),
                 Expanded(
-                  child: IndexedStack(
-                    index: selectedIndex,
-                    children: pages,
-                  ),
+                  child: _buildPageContent(),
                 ),
               ],
             ),
@@ -86,17 +95,10 @@ class _MainNavigationScreenState
         }
 
         return Scaffold(
-          body: IndexedStack(
-            index: selectedIndex,
-            children: pages,
-          ),
+          body: _buildPageContent(),
           bottomNavigationBar: NavigationBar(
             selectedIndex: selectedIndex,
-            onDestinationSelected: (index) {
-              setState(() {
-                selectedIndex = index;
-              });
-            },
+            onDestinationSelected: _changePage,
             destinations: const [
               NavigationDestination(
                 icon: Icon(Icons.home_outlined),

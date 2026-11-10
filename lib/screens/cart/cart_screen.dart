@@ -3,7 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../providers/cart_provider.dart';
+import '../../widgets/empty_state_widget.dart';
 import '../orders/order_history_screen.dart';
+import '../pharmacies/pharmacy_list_screen.dart';
 import 'checkout_screen.dart';
 
 class CartScreen extends StatelessWidget {
@@ -18,6 +20,15 @@ class CartScreen extends StatelessWidget {
       context,
       MaterialPageRoute(
         builder: (_) => const OrderHistoryScreen(),
+      ),
+    );
+  }
+
+  void _openNearbyPharmacies(BuildContext context) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => const PharmacyListScreen(),
       ),
     );
   }
@@ -128,6 +139,27 @@ class CartScreen extends StatelessWidget {
     );
   }
 
+  Widget _buildEmptyCart(BuildContext context) {
+    return ListView(
+      padding: const EdgeInsets.all(16),
+      children: [
+        _buildOrderHistoryButton(context),
+        const SizedBox(height: 50),
+        EmptyStateWidget(
+          title: 'Keranjang masih kosong',
+          message:
+              'Pilih apotek terlebih dahulu untuk melihat '
+              'produk dan ketersediaan obat yang bisa dibeli.',
+          icon: Icons.shopping_cart_outlined,
+          buttonText: 'Lihat Apotek Terdekat',
+          onButtonPressed: () {
+            _openNearbyPharmacies(context);
+          },
+        ),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -137,36 +169,7 @@ class CartScreen extends StatelessWidget {
       body: Consumer<CartProvider>(
         builder: (context, cart, child) {
           if (cart.isEmpty) {
-            return ListView(
-              padding: const EdgeInsets.all(16),
-              children: [
-                _buildOrderHistoryButton(context),
-                const SizedBox(height: 100),
-                const Icon(
-                  Icons.shopping_cart_outlined,
-                  size: 75,
-                  color: Colors.grey,
-                ),
-                const SizedBox(height: 16),
-                const Text(
-                  'Keranjang masih kosong',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: 17,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                const Text(
-                  'Tambahkan produk dari apotek terlebih dahulu.',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    color: Colors.black54,
-                    fontSize: 13,
-                  ),
-                ),
-              ],
-            );
+            return _buildEmptyCart(context);
           }
 
           return Column(

@@ -109,27 +109,85 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
         ? null
         : DateTime.tryParse(order['pickup_at'].toString())?.toLocal();
 
+    // Gunakan tanggal awal pesanan sebagai patokan.
+    // Untuk pesanan lama yang belum memiliki original_pickup_at,
+    // sementara gunakan pickup_at.
+    final originalPickup = order['original_pickup_at'] == null
+        ? currentPickup
+        : DateTime.tryParse(
+            order['original_pickup_at'].toString(),
+          )?.toLocal();
+
+    if (originalPickup == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Tanggal awal pesanan tidak dapat dibaca.'),
+        ),
+      );
+      return;
+    }
+
     final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+
+    final originalDate = DateTime(
+      originalPickup.year,
+      originalPickup.month,
+      originalPickup.day,
+    );
+
+    // Maksimal dua hari setelah tanggal awal pesanan.
+    final maxDate = originalDate.add(
+      const Duration(days: 2),
+    );
+
+    if (today.isAfter(maxDate)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Batas perubahan jadwal sudah lewat. '
+            'Jadwal hanya dapat diubah sampai dua hari '
+            'setelah tanggal awal.',
+          ),
+        ),
+      );
+      return;
+    }
+
+    final initialDate = currentPickup != null &&
+            !currentPickup.isBefore(today) &&
+            !DateTime(
+              currentPickup.year,
+              currentPickup.month,
+              currentPickup.day,
+            ).isAfter(maxDate)
+        ? DateTime(
+            currentPickup.year,
+            currentPickup.month,
+            currentPickup.day,
+          )
+        : today;
 
     final selected = await showDatePicker(
       context: context,
-      initialDate: currentPickup != null &&
-              currentPickup.isAfter(now)
-          ? currentPickup
-          : now,
-      firstDate: DateTime(now.year, now.month, now.day),
-      lastDate: DateTime(now.year + 1, 12, 31),
+      initialDate: initialDate,
+      firstDate: today,
+      lastDate: maxDate,
       helpText: 'Pilih tanggal pengambilan',
+      cancelText: 'Batal',
+      confirmText: 'Pilih',
     );
 
     if (selected == null || !mounted) return;
 
+    final initialTime = currentPickup != null
+        ? TimeOfDay.fromDateTime(currentPickup)
+        : const TimeOfDay(hour: 6, minute: 0);
+
     final selectedTime = await showTimePicker(
       context: context,
-      initialTime: currentPickup != null
-          ? TimeOfDay.fromDateTime(currentPickup)
-          : TimeOfDay.now(),
-      helpText: 'Pilih jam pengambilan',
+      initialTime: initialTime,
+      helpText: 'Pilih jam pengambilan (06.00–22.00)',
     );
 
     if (selectedTime == null || !mounted) return;
@@ -142,16 +200,60 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
       selectedTime.minute,
     );
 
-    if (pickupDate.isBefore(DateTime.now())) {
+    // Jam pengambilan hanya boleh pukul 06.00 sampai 22.00.
+    final isWithinPickupHours =
+        (selectedTime.hour > 6 ||
+            (selectedTime.hour == 6 &&
+                selectedTime.minute == 0)) &&
+        (selectedTime.hour < 22 ||
+            (selectedTime.hour == 22 &&
+                selectedTime.minute == 0));
+
+    if (!isWithinPickupHours) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Tanggal dan jam harus di masa depan.'),
+          content: Text(
+            'Pengambilan hanya tersedia pukul 06.00–22.00.',
+          ),
         ),
       );
       return;
     }
 
-    final success = await context.read<OrderProvider>()
+    // Tanggal dan jam yang dipilih harus belum lewat.
+    if (!pickupDate.isAfter(DateTime.now())) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Tanggal dan jam harus di masa depan.',
+          ),
+        ),
+      );
+      return;
+    }
+
+    // Pastikan jadwal tidak melewati batas dua hari.
+    final lastAllowedTime = DateTime(
+      maxDate.year,
+      maxDate.month,
+      maxDate.day,
+      22,
+      0,
+    );
+
+    if (pickupDate.isAfter(lastAllowedTime)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Jadwal maksimal dua hari setelah tanggal awal.',
+          ),
+        ),
+      );
+      return;
+    }
+
+    final success = await context
+        .read<OrderProvider>()
         .updatePickupDate(
           orderId: orderId,
           pickupDate: pickupDate,
@@ -164,13 +266,16 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
         content: Text(
           success
               ? 'Tanggal pengambilan berhasil diperbarui.'
-              : 'Gagal mengubah tanggal. Pastikan pesanan masih menunggu.',
+              : 'Gagal mengubah tanggal. '
+                  'Pastikan pesanan masih menunggu.',
         ),
       ),
     );
   }
 
-  Future<void> _cancelOrder(Map<String, dynamic> order) async {
+  Future<void> _cancelOrder(
+    Map<String, dynamic> order,
+  ) async {
     final orderId = int.tryParse(order['id'].toString());
     if (orderId == null) return;
 
@@ -184,11 +289,15 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(dialogContext, false),
+            onPressed: () {
+              Navigator.pop(dialogContext, false);
+            },
             child: const Text('Kembali'),
           ),
           ElevatedButton(
-            onPressed: () => Navigator.pop(dialogContext, true),
+            onPressed: () {
+              Navigator.pop(dialogContext, true);
+            },
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.red,
               foregroundColor: Colors.white,
@@ -201,7 +310,8 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
 
     if (confirmed != true || !mounted) return;
 
-    final success = await context.read<OrderProvider>()
+    final success = await context
+        .read<OrderProvider>()
         .cancelOrder(orderId);
 
     if (!mounted) return;
@@ -211,7 +321,8 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
         content: Text(
           success
               ? 'Pesanan berhasil dibatalkan.'
-              : 'Pesanan tidak dapat dibatalkan karena statusnya sudah berubah.',
+              : 'Pesanan tidak dapat dibatalkan '
+                  'karena statusnya sudah berubah.',
         ),
       ),
     );
@@ -290,7 +401,9 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
                     ),
                   ),
                   SizedBox(height: 8),
-                  Text('Pesanan kamu akan muncul di sini.'),
+                  Text(
+                    'Pesanan kamu akan muncul di sini.',
+                  ),
                 ],
               ),
             );
@@ -308,7 +421,9 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
 
                 final status =
                     order['order_status']?.toString() ?? 'unknown';
-                final isPending = status.toLowerCase() == 'pending';
+
+                final isPending =
+                    status.toLowerCase() == 'pending';
 
                 return Card(
                   margin: const EdgeInsets.only(bottom: 16),
@@ -331,7 +446,8 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
                                     CrossAxisAlignment.start,
                                 children: [
                                   Text(
-                                    pharmacy['name']?.toString() ?? 'Apotek',
+                                    pharmacy['name']?.toString() ??
+                                        'Apotek',
                                     style: const TextStyle(
                                       fontWeight: FontWeight.bold,
                                       fontSize: 16,
@@ -349,8 +465,8 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
                             ),
                             Chip(
                               label: Text(_statusLabel(status)),
-                              backgroundColor:
-                                  _statusColor(status).withValues(alpha: 0.12),
+                              backgroundColor: _statusColor(status)
+                                  .withValues(alpha: 0.12),
                               labelStyle: TextStyle(
                                 color: _statusColor(status),
                                 fontWeight: FontWeight.bold,
@@ -360,41 +476,53 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
                         ),
                         const SizedBox(height: 8),
                         Text(
-                          'Dipesan: ${_formatDate(order['created_at'])}',
+                          'Dipesan: '
+                          '${_formatDate(order['created_at'])}',
                           style: const TextStyle(fontSize: 12),
                         ),
                         const Divider(height: 24),
                         const Text(
                           'Produk Pesanan',
-                          style: TextStyle(fontWeight: FontWeight.bold),
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
                         const SizedBox(height: 8),
                         ...items.map((item) {
-                          final medicine = _asMap(item['medicines']);
+                          final medicine =
+                              _asMap(item['medicines']);
 
                           return Padding(
-                            padding: const EdgeInsets.symmetric(vertical: 5),
+                            padding: const EdgeInsets.symmetric(
+                              vertical: 5,
+                            ),
                             child: Row(
                               children: [
                                 Expanded(
                                   child: Text(
-                                    medicine['name']?.toString() ?? 'Produk',
+                                    medicine['name']?.toString() ??
+                                        'Produk',
                                   ),
                                 ),
                                 Text('x${item['quantity']}'),
                                 const SizedBox(width: 12),
-                                Text(_formatPrice(item['subtotal'])),
+                                Text(
+                                  _formatPrice(item['subtotal']),
+                                ),
                               ],
                             ),
                           );
                         }),
                         const Divider(height: 24),
                         Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          mainAxisAlignment:
+                              MainAxisAlignment.spaceBetween,
                           children: [
                             const Text(
                               'Total Pesanan',
-                              style: TextStyle(fontWeight: FontWeight.bold),
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                              ),
                             ),
                             Text(
                               _formatPrice(order['total_price']),
@@ -409,7 +537,9 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
                         const SizedBox(height: 12),
                         const Text(
                           'Tanggal Pengambilan',
-                          style: TextStyle(fontWeight: FontWeight.bold),
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
                         const SizedBox(height: 5),
                         Row(
@@ -431,8 +561,12 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
                           SizedBox(
                             width: double.infinity,
                             child: OutlinedButton.icon(
-                              onPressed: () => _changePickupDate(order),
-                              icon: const Icon(Icons.edit_calendar),
+                              onPressed: () {
+                                _changePickupDate(order);
+                              },
+                              icon: const Icon(
+                                Icons.edit_calendar,
+                              ),
                               label: const Text(
                                 'Ubah Tanggal Pengambilan',
                               ),
@@ -441,14 +575,18 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
                           SizedBox(
                             width: double.infinity,
                             child: TextButton.icon(
-                              onPressed: () => _cancelOrder(order),
+                              onPressed: () {
+                                _cancelOrder(order);
+                              },
                               icon: const Icon(
                                 Icons.cancel_outlined,
                                 color: Colors.red,
                               ),
                               label: const Text(
                                 'Batalkan Pesanan',
-                                style: TextStyle(color: Colors.red),
+                                style: TextStyle(
+                                  color: Colors.red,
+                                ),
                               ),
                             ),
                           ),
@@ -456,7 +594,8 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
                           const Padding(
                             padding: EdgeInsets.only(top: 12),
                             child: Text(
-                              'Pesanan tidak dapat diubah pada status ini.',
+                              'Pesanan tidak dapat diubah '
+                              'pada status ini.',
                               style: TextStyle(
                                 color: Colors.grey,
                                 fontSize: 12,

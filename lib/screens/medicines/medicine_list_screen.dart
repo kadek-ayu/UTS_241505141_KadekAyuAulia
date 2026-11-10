@@ -46,7 +46,7 @@ class _MedicineListScreenState extends State<MedicineListScreen> {
   List<OpenFdaProduct> _filterProducts(
     List<OpenFdaProduct> products,
   ) {
-    final query = searchQuery.toLowerCase();
+    final query = searchQuery.toLowerCase().trim();
 
     if (query.isEmpty) {
       return products;
@@ -67,6 +67,7 @@ class _MedicineListScreenState extends State<MedicineListScreen> {
     return Card(
       elevation: 1,
       color: Colors.white,
+      margin: EdgeInsets.zero,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(14),
       ),
@@ -74,13 +75,13 @@ class _MedicineListScreenState extends State<MedicineListScreen> {
       child: InkWell(
         onTap: () => _openDetail(product),
         child: Padding(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.all(14),
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Container(
-                width: 48,
-                height: 48,
+                width: 44,
+                height: 44,
                 decoration: BoxDecoration(
                   color: AppTheme.blueAccent,
                   borderRadius: BorderRadius.circular(12),
@@ -88,55 +89,76 @@ class _MedicineListScreenState extends State<MedicineListScreen> {
                 child: const Icon(
                   Icons.medication_outlined,
                   color: AppTheme.primaryColor,
+                  size: 24,
                 ),
               ),
-              const SizedBox(width: 14),
+              const SizedBox(width: 12),
+
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
                   children: [
                     Text(
                       displayName.isNotEmpty
                           ? displayName
                           : 'Nama produk tidak tersedia',
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
                         fontWeight: FontWeight.bold,
-                        fontSize: 16,
+                        fontSize: 15,
                       ),
                     ),
+
                     if (product.genericName.isNotEmpty) ...[
                       const SizedBox(height: 5),
                       Text(
                         'Nama generik: ${product.genericName}',
-                        style: const TextStyle(fontSize: 13),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(fontSize: 12),
                       ),
                     ],
+
                     if (product.manufacturer.isNotEmpty) ...[
                       const SizedBox(height: 5),
                       Text(
                         'Produsen: ${product.manufacturer}',
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
                         style: TextStyle(
                           fontSize: 12,
                           color: Colors.grey.shade700,
                         ),
                       ),
                     ],
+
                     if (product.dosageForm.isNotEmpty) ...[
                       const SizedBox(height: 5),
                       Text(
                         'Bentuk sediaan: ${product.dosageForm}',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                         style: const TextStyle(fontSize: 12),
                       ),
                     ],
-                    const SizedBox(height: 8),
+
+                    const SizedBox(height: 10),
+
                     Row(
+                      mainAxisSize: MainAxisSize.min,
                       children: [
-                        Text(
-                          'Lihat detail produk',
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: AppTheme.primaryColor,
-                            fontWeight: FontWeight.w600,
+                        Flexible(
+                          child: Text(
+                            'Lihat detail produk',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              fontSize: 12,
+                              color: AppTheme.primaryColor,
+                              fontWeight: FontWeight.w600,
+                            ),
                           ),
                         ),
                         const SizedBox(width: 4),
@@ -166,26 +188,29 @@ class _MedicineListScreenState extends State<MedicineListScreen> {
 
     if (provider.errorMessage != null) {
       return Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Icon(
-              Icons.cloud_off_outlined,
-              size: 48,
-              color: Colors.grey,
-            ),
-            const SizedBox(height: 12),
-            Text(
-              provider.errorMessage!,
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 12),
-            ElevatedButton.icon(
-              onPressed: provider.loadProducts,
-              icon: const Icon(Icons.refresh),
-              label: const Text('Coba Lagi'),
-            ),
-          ],
+        child: Padding(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(
+                Icons.cloud_off_outlined,
+                size: 48,
+                color: Colors.grey,
+              ),
+              const SizedBox(height: 12),
+              Text(
+                provider.errorMessage!,
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 12),
+              ElevatedButton.icon(
+                onPressed: provider.loadProducts,
+                icon: const Icon(Icons.refresh),
+                label: const Text('Coba Lagi'),
+              ),
+            ],
+          ),
         ),
       );
     }
@@ -208,11 +233,12 @@ class _MedicineListScreenState extends State<MedicineListScreen> {
       builder: (context, constraints) {
         if (constraints.maxWidth >= 700) {
           return GridView.builder(
+            padding: const EdgeInsets.only(bottom: 12),
             itemCount: filteredProducts.length,
             gridDelegate:
                 const SliverGridDelegateWithMaxCrossAxisExtent(
               maxCrossAxisExtent: 450,
-              mainAxisExtent: 170,
+              mainAxisExtent: 240,
               crossAxisSpacing: 12,
               mainAxisSpacing: 12,
             ),
@@ -225,6 +251,7 @@ class _MedicineListScreenState extends State<MedicineListScreen> {
         }
 
         return ListView.separated(
+          padding: const EdgeInsets.only(bottom: 12),
           itemCount: filteredProducts.length,
           separatorBuilder: (context, index) =>
               const SizedBox(height: 12),
@@ -285,7 +312,9 @@ class _MedicineListScreenState extends State<MedicineListScreen> {
                     ),
                   ),
                 ),
+
                 const SizedBox(height: 16),
+
                 Text(
                   'Data Produk OpenFDA (${filteredProducts.length})',
                   style: const TextStyle(
@@ -293,11 +322,15 @@ class _MedicineListScreenState extends State<MedicineListScreen> {
                     fontWeight: FontWeight.bold,
                   ),
                 ),
+
                 const SizedBox(height: 12),
+
                 Expanded(
                   child: _buildContent(provider),
                 ),
+
                 const SizedBox(height: 8),
+
                 Text(
                   'Sumber informasi: OpenFDA. '
                   'Data ini merupakan informasi produk, '

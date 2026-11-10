@@ -4,8 +4,9 @@ import 'package:provider/provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../providers/cart_provider.dart';
+import '../../providers/favorite_provider.dart';
 
-class PharmacyDetailScreen extends StatelessWidget {
+class PharmacyDetailScreen extends StatefulWidget {
   final Map<String, dynamic> pharmacy;
 
   const PharmacyDetailScreen({
@@ -13,8 +14,25 @@ class PharmacyDetailScreen extends StatelessWidget {
     required this.pharmacy,
   });
 
+  @override
+  State<PharmacyDetailScreen> createState() =>
+      _PharmacyDetailScreenState();
+}
+
+class _PharmacyDetailScreenState extends State<PharmacyDetailScreen> {
+  @override
+  void initState() {
+    super.initState();
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        context.read<FavoriteProvider>().loadFavorites();
+      }
+    });
+  }
+
   Future<List<Map<String, dynamic>>> _loadProducts() async {
-    final pharmacyId = pharmacy['id'];
+    final pharmacyId = widget.pharmacy['id'];
 
     final response = await Supabase.instance.client
         .from('pharmacy_medicines')
@@ -87,17 +105,47 @@ class PharmacyDetailScreen extends StatelessWidget {
       );
   }
 
+  Future<void> _toggleFavorite(
+    BuildContext context,
+    int pharmacyMedicineId,
+    bool isFavorite,
+  ) async {
+    final favoriteProvider = context.read<FavoriteProvider>();
+
+    final success = await favoriteProvider.toggleFavorite(
+      pharmacyMedicineId,
+    );
+
+    if (!context.mounted) return;
+
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        SnackBar(
+          content: Text(
+            success
+                ? isFavorite
+                    ? 'Produk dihapus dari tersimpan.'
+                    : 'Produk berhasil disimpan.'
+                : 'Gagal memperbarui produk tersimpan.',
+          ),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+  }
+
   @override
   Widget build(BuildContext context) {
-    final pharmacyId = (pharmacy['id'] as num).toInt();
+    final pharmacyId = (widget.pharmacy['id'] as num).toInt();
+
     final name =
-        pharmacy['name']?.toString() ?? 'Nama tidak tersedia';
+        widget.pharmacy['name']?.toString() ?? 'Nama tidak tersedia';
     final address =
-        pharmacy['address']?.toString() ?? 'Alamat tidak tersedia';
-    final city = pharmacy['city']?.toString() ?? '';
-    final phone = pharmacy['phone']?.toString() ?? '';
+        widget.pharmacy['address']?.toString() ?? 'Alamat tidak tersedia';
+    final city = widget.pharmacy['city']?.toString() ?? '';
+    final phone = widget.pharmacy['phone']?.toString() ?? '';
     final openingHours =
-        pharmacy['opening_hours']?.toString() ?? '';
+        widget.pharmacy['opening_hours']?.toString() ?? '';
 
     return Scaffold(
       appBar: AppBar(
@@ -243,6 +291,10 @@ class PharmacyDetailScreen extends StatelessWidget {
                     final product =
                         Map<String, dynamic>.from(medicine);
 
+                    // ID baris pharmacy_medicines untuk favorit.
+                    final pharmacyMedicineId =
+                        (item['id'] as num).toInt();
+
                     final medicineId =
                         (product['id'] as num).toInt();
 
@@ -265,8 +317,7 @@ class PharmacyDetailScreen extends StatelessWidget {
                         (item['price'] as num?)?.toDouble() ?? 0;
 
                     final status =
-                        item['availability_status']?.toString() ??
-                            '';
+                        item['availability_status']?.toString() ?? '';
 
                     final isAvailable =
                         status == 'available' && stock > 0;
@@ -276,6 +327,7 @@ class PharmacyDetailScreen extends StatelessWidget {
                       pharmacyId: pharmacyId,
                       pharmacyName: name,
                       medicineId: medicineId,
+                      pharmacyMedicineId: pharmacyMedicineId,
                       name: productName,
                       category: category,
                       packaging: packaging,
@@ -298,6 +350,7 @@ class PharmacyDetailScreen extends StatelessWidget {
     required int pharmacyId,
     required String pharmacyName,
     required int medicineId,
+    required int pharmacyMedicineId,
     required String name,
     required String category,
     required String packaging,
@@ -334,7 +387,9 @@ class PharmacyDetailScreen extends StatelessWidget {
                     size: 26,
                   ),
                 ),
+
                 const SizedBox(width: 12),
+
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -359,12 +414,49 @@ class PharmacyDetailScreen extends StatelessWidget {
                     ],
                   ),
                 ),
-                Icon(
-                  isAvailable
-                      ? Icons.check_circle
-                      : Icons.cancel,
-                  color:
-                      isAvailable ? Colors.green : Colors.red,
+
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      isAvailable
+                          ? Icons.check_circle
+                          : Icons.cancel,
+                      color:
+                          isAvailable ? Colors.green : Colors.red,
+                    ),
+
+                    Consumer<FavoriteProvider>(
+                      builder: (context, favoriteProvider, child) {
+                        final isFavorite =
+                            favoriteProvider.isFavorite(
+                          pharmacyMedicineId,
+                        );
+
+                        return IconButton(
+                          tooltip: isFavorite
+                              ? 'Hapus dari produk tersimpan'
+                              : 'Simpan produk',
+                          visualDensity: VisualDensity.compact,
+                          icon: Icon(
+                            isFavorite
+                                ? Icons.star
+                                : Icons.star_border,
+                            color: isFavorite
+                                ? Colors.amber.shade700
+                                : Colors.grey,
+                          ),
+                          onPressed: () {
+                            _toggleFavorite(
+                              context,
+                              pharmacyMedicineId,
+                              isFavorite,
+                            );
+                          },
+                        );
+                      },
+                    ),
+                  ],
                 ),
               ],
             ),

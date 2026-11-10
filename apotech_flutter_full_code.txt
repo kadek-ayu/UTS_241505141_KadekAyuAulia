@@ -1,17 +1,22 @@
-﻿==================================================
-FILE: lib\app.dart
-==================================================
+﻿
+
+========================================
+FILE: C:\Users\putu\Desktop\project flutter\apotech_flutter_uts\lib\app.dart
+========================================
 
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import 'constants/app_constants.dart';
 import 'constants/app_theme.dart';
+
 import 'providers/medicine_provider.dart';
 import 'providers/openfda_provider.dart';
 import 'providers/favorite_provider.dart';
 import 'providers/cart_provider.dart';
 import 'providers/order_provider.dart';
+import 'providers/profile_provider.dart';
+
 import 'screens/main_navigation_screen.dart';
 
 class ApoTechApp extends StatelessWidget {
@@ -36,6 +41,9 @@ class ApoTechApp extends StatelessWidget {
         ChangeNotifierProvider(
           create: (_) => OrderProvider(),
         ),
+        ChangeNotifierProvider(
+          create: (_) => ProfileProvider()..loadProfile(),
+        ),
       ],
       child: MaterialApp(
         debugShowCheckedModeBanner: false,
@@ -47,9 +55,31 @@ class ApoTechApp extends StatelessWidget {
   }
 }
 
-==================================================
-FILE: lib\constants\app_constants.dart
-==================================================
+
+========================================
+FILE: C:\Users\putu\Desktop\project flutter\apotech_flutter_uts\lib\main.dart
+========================================
+
+import 'package:flutter/material.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+
+import 'app.dart';
+
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  await Supabase.initialize(
+    url: 'https://qxcmokdvxsxnldwjymag.supabase.co',
+    publishableKey: 'sb_publishable_qMVxCmv2viF3gfewomBXnw_-_DmLTYV',
+  );
+
+  runApp(const ApoTechApp());
+}
+
+
+========================================
+FILE: C:\Users\putu\Desktop\project flutter\apotech_flutter_uts\lib\constants\app_constants.dart
+========================================
 
 class AppConstants {
   static const String appName = 'ApoTech';
@@ -59,9 +89,10 @@ class AppConstants {
   static const String medicineTable = 'medicines';
 }
 
-==================================================
-FILE: lib\constants\app_theme.dart
-==================================================
+
+========================================
+FILE: C:\Users\putu\Desktop\project flutter\apotech_flutter_uts\lib\constants\app_theme.dart
+========================================
 
 import 'package:flutter/material.dart';
 
@@ -91,29 +122,10 @@ class AppTheme {
   }
 }
 
-==================================================
-FILE: lib\main.dart
-==================================================
 
-import 'package:flutter/material.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
-
-import 'app.dart';
-
-Future<void> main() async {
-  WidgetsFlutterBinding.ensureInitialized();
-
-  await Supabase.initialize(
-    url: 'https://qxcmokdvxsxnldwjymag.supabase.co',
-    publishableKey: 'sb_publishable_qMVxCmv2viF3gfewomBXnw_-_DmLTYV',
-  );
-
-  runApp(const ApoTechApp());
-}
-
-==================================================
-FILE: lib\models\medicine.dart
-==================================================
+========================================
+FILE: C:\Users\putu\Desktop\project flutter\apotech_flutter_uts\lib\models\medicine.dart
+========================================
 
 class Medicine {
   final int? id;
@@ -159,9 +171,10 @@ class Medicine {
   }
 }
 
-==================================================
-FILE: lib\models\openfda_product.dart
-==================================================
+
+========================================
+FILE: C:\Users\putu\Desktop\project flutter\apotech_flutter_uts\lib\models\openfda_product.dart
+========================================
 
 class OpenFdaProduct {
   final String productNdc;
@@ -208,9 +221,10 @@ class OpenFdaProduct {
   }
 }
 
-==================================================
-FILE: lib\models\order.dart
-==================================================
+
+========================================
+FILE: C:\Users\putu\Desktop\project flutter\apotech_flutter_uts\lib\models\order.dart
+========================================
 
 class Order {
   final int id;
@@ -238,9 +252,66 @@ class Order {
   }
 }
 
-==================================================
-FILE: lib\providers\cart_provider.dart
-==================================================
+
+========================================
+FILE: C:\Users\putu\Desktop\project flutter\apotech_flutter_uts\lib\models\profile.dart
+========================================
+
+class Profile {
+  final int id;
+  final String customerId;
+  final String fullName;
+  final String phoneNumber;
+  final String? email;
+  final String? address;
+  final DateTime? createdAt;
+  final DateTime? updatedAt;
+  final String? avatarUrl;
+
+  const Profile({
+    required this.id,
+    required this.customerId,
+    required this.fullName,
+    required this.phoneNumber,
+    this.email,
+    this.address,
+    this.createdAt,
+    this.updatedAt,
+    this.avatarUrl,
+  });
+
+  factory Profile.fromMap(Map<String, dynamic> map) {
+    return Profile(
+      id: map['id'] as int,
+      customerId: map['customer_id'] ?? '',
+      fullName: map['full_name'] ?? '',
+      phoneNumber: map['phone_number'] ?? '',
+      email: map['email'],
+      address: map['address'],
+      createdAt: map['created_at'] != null
+          ? DateTime.tryParse(map['created_at'].toString())
+          : null,
+      updatedAt: map['updated_at'] != null
+          ? DateTime.tryParse(map['updated_at'].toString())
+          : null,
+      avatarUrl: map['avatar_url'],
+    );
+  }
+
+  Map<String, dynamic> toMap() {
+    return {
+      'full_name': fullName,
+      'phone_number': phoneNumber,
+      'email': email,
+      'address': address,
+    };
+  }
+}
+
+
+========================================
+FILE: C:\Users\putu\Desktop\project flutter\apotech_flutter_uts\lib\providers\cart_provider.dart
+========================================
 
 import 'package:flutter/foundation.dart';
 
@@ -409,9 +480,10 @@ class CartProvider extends ChangeNotifier {
   }
 }
 
-==================================================
-FILE: lib\providers\favorite_provider.dart
-==================================================
+
+========================================
+FILE: C:\Users\putu\Desktop\project flutter\apotech_flutter_uts\lib\providers\favorite_provider.dart
+========================================
 import 'package:flutter/material.dart';
 
 import '../models/openfda_product.dart';
@@ -453,9 +525,10 @@ class FavoriteProvider extends ChangeNotifier {
   }
 }
 
-==================================================
-FILE: lib\providers\medicine_provider.dart
-==================================================
+
+========================================
+FILE: C:\Users\putu\Desktop\project flutter\apotech_flutter_uts\lib\providers\medicine_provider.dart
+========================================
 
 import 'package:flutter/material.dart';
 
@@ -493,9 +566,10 @@ class MedicineProvider extends ChangeNotifier {
   }
 }
 
-==================================================
-FILE: lib\providers\openfda_provider.dart
-==================================================
+
+========================================
+FILE: C:\Users\putu\Desktop\project flutter\apotech_flutter_uts\lib\providers\openfda_provider.dart
+========================================
 
 import 'package:flutter/material.dart';
 
@@ -533,9 +607,10 @@ class OpenFdaProvider extends ChangeNotifier {
   }
 }
 
-==================================================
-FILE: lib\providers\order_provider.dart
-==================================================
+
+========================================
+FILE: C:\Users\putu\Desktop\project flutter\apotech_flutter_uts\lib\providers\order_provider.dart
+========================================
 
 import 'package:flutter/foundation.dart';
 
@@ -553,10 +628,12 @@ class OrderProvider extends ChangeNotifier {
   bool get isLoading => _isLoading;
   String? get errorMessage => _errorMessage;
   Map<String, dynamic>? get lastOrder => _lastOrder;
-  List<Map<String, dynamic>> get orders =>
-      List.unmodifiable(_orders);
+  List<Map<String, dynamic>> get orders => List.unmodifiable(_orders);
 
-  Future<bool> createOrder(CartProvider cart) async {
+  Future<bool> createOrder(
+    CartProvider cart, {
+    required DateTime pickupDate,
+  }) async {
     if (_isLoading) return false;
 
     _isLoading = true;
@@ -566,6 +643,7 @@ class OrderProvider extends ChangeNotifier {
     try {
       _lastOrder = await _orderService.createOrder(
         cart: cart,
+        pickupDate: pickupDate,
       );
 
       return true;
@@ -592,11 +670,127 @@ class OrderProvider extends ChangeNotifier {
       notifyListeners();
     }
   }
+
+  Future<bool> updatePickupDate({
+    required int orderId,
+    required DateTime pickupDate,
+  }) async {
+    try {
+      final success = await _orderService.updatePickupDate(
+        orderId: orderId,
+        pickupDate: pickupDate,
+      );
+
+      if (success) await loadOrders();
+      return success;
+    } catch (error) {
+      _errorMessage = error.toString();
+      notifyListeners();
+      return false;
+    }
+  }
+
+  Future<bool> cancelOrder(int orderId) async {
+    try {
+      final success = await _orderService.cancelOrder(orderId);
+
+      if (success) await loadOrders();
+      return success;
+    } catch (error) {
+      _errorMessage = error.toString();
+      notifyListeners();
+      return false;
+    }
+  }
 }
 
-==================================================
-FILE: lib\repositories\medicine_repository.dart
-==================================================
+
+========================================
+FILE: C:\Users\putu\Desktop\project flutter\apotech_flutter_uts\lib\providers\profile_provider.dart
+========================================
+
+import 'dart:io';
+
+import 'package:flutter/material.dart';
+
+import '../models/profile.dart';
+import '../repositories/profile_repository.dart';
+import '../services/profile_service.dart';
+
+class ProfileProvider extends ChangeNotifier {
+  final ProfileRepository _repository =
+      ProfileRepository(ProfileService());
+
+  Profile? _profile;
+  bool _isLoading = false;
+  bool _isSaving = false;
+  String? _errorMessage;
+
+  Profile? get profile => _profile;
+  bool get isLoading => _isLoading;
+  bool get isSaving => _isSaving;
+  String? get errorMessage => _errorMessage;
+
+  // Mengambil data profil.
+  Future<void> loadProfile() async {
+    _isLoading = true;
+    _errorMessage = null;
+    notifyListeners();
+
+    try {
+      _profile = await _repository.getProfile();
+    } catch (e) {
+      _errorMessage = 'Gagal mengambil data profil: $e';
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  // Menyimpan perubahan profil.
+  Future<bool> updateProfile(Profile updatedProfile) async {
+    _isSaving = true;
+    _errorMessage = null;
+    notifyListeners();
+
+    try {
+      await _repository.updateProfile(updatedProfile);
+      await loadProfile();
+      return true;
+    } catch (e) {
+      _errorMessage = 'Gagal memperbarui profil: $e';
+      return false;
+    } finally {
+      _isSaving = false;
+      notifyListeners();
+    }
+  }
+
+  // Mengunggah dan menyimpan foto profil.
+  Future<bool> updateProfilePhoto(File imageFile) async {
+    _isSaving = true;
+    _errorMessage = null;
+    notifyListeners();
+
+    try {
+      final url = await _repository.uploadProfilePhoto(imageFile);
+      await _repository.updateAvatar(url);
+      await loadProfile();
+      return true;
+    } catch (e) {
+      _errorMessage = 'Gagal memperbarui foto profil: $e';
+      return false;
+    } finally {
+      _isSaving = false;
+      notifyListeners();
+    }
+  }
+}
+
+
+========================================
+FILE: C:\Users\putu\Desktop\project flutter\apotech_flutter_uts\lib\repositories\medicine_repository.dart
+========================================
 
 import '../models/medicine.dart';
 import '../services/local_medicine_service.dart';
@@ -613,9 +807,10 @@ class MedicineRepository {
   }
 }
 
-==================================================
-FILE: lib\repositories\openfda_repository.dart
-==================================================
+
+========================================
+FILE: C:\Users\putu\Desktop\project flutter\apotech_flutter_uts\lib\repositories\openfda_repository.dart
+========================================
 
 import '../models/openfda_product.dart';
 import '../services/openfda_service.dart';
@@ -632,14 +827,289 @@ class OpenFdaRepository {
   }
 }
 
-==================================================
-FILE: lib\screens\cart\cart_screen.dart
-==================================================
+
+========================================
+FILE: C:\Users\putu\Desktop\project flutter\apotech_flutter_uts\lib\repositories\profile_repository.dart
+========================================
+
+import 'dart:io';
+
+import '../models/profile.dart';
+import '../services/profile_service.dart';
+
+class ProfileRepository {
+  final ProfileService _profileService;
+
+  ProfileRepository(this._profileService);
+
+  Future<Profile> getProfile() async {
+    final data = await _profileService.getProfile();
+    return Profile.fromMap(data);
+  }
+
+  Future<void> updateProfile(Profile profile) async {
+    await _profileService.updateProfile(profile.toMap());
+  }
+
+  Future<void> updateAvatar(String avatarUrl) async {
+    await _profileService.updateProfile({
+      'avatar_url': avatarUrl,
+    });
+  }
+
+  Future<String> uploadProfilePhoto(File imageFile) async {
+    return _profileService.uploadProfilePhoto(imageFile);
+  }
+}
+
+
+========================================
+FILE: C:\Users\putu\Desktop\project flutter\apotech_flutter_uts\lib\screens\main_navigation_screen.dart
+========================================
+
+import 'package:flutter/material.dart';
+
+import 'home/home_screen.dart';
+import 'medicines/medicine_list_screen.dart';
+import 'medicines/favorite_screen.dart';
+import 'cart/cart_screen.dart';
+import 'profile/profile_screen.dart';
+
+class MainNavigationScreen extends StatefulWidget {
+  const MainNavigationScreen({super.key});
+
+  @override
+  State<MainNavigationScreen> createState() =>
+      _MainNavigationScreenState();
+}
+
+class _MainNavigationScreenState
+    extends State<MainNavigationScreen> {
+  int selectedIndex = 0;
+
+  final List<Widget> pages = const [
+    HomeScreen(),
+    MedicineListScreen(),
+    FavoriteScreen(),
+    CartScreen(),
+    ProfileScreen(),
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final isWideScreen = constraints.maxWidth >= 800;
+
+        if (isWideScreen) {
+          return Scaffold(
+            body: Row(
+              children: [
+                NavigationRail(
+                  selectedIndex: selectedIndex,
+                  onDestinationSelected: (index) {
+                    setState(() {
+                      selectedIndex = index;
+                    });
+                  },
+                  labelType: NavigationRailLabelType.all,
+                  destinations: const [
+                    NavigationRailDestination(
+                      icon: Icon(Icons.home_outlined),
+                      selectedIcon: Icon(Icons.home),
+                      label: Text('Home'),
+                    ),
+                    NavigationRailDestination(
+                      icon: Icon(Icons.medication_outlined),
+                      selectedIcon: Icon(Icons.medication),
+                      label: Text('Katalog'),
+                    ),
+                    NavigationRailDestination(
+                      icon: Icon(Icons.star_border),
+                      selectedIcon: Icon(Icons.star),
+                      label: Text('Tersimpan'),
+                    ),
+                    NavigationRailDestination(
+                      icon: Icon(Icons.shopping_cart_outlined),
+                      selectedIcon: Icon(Icons.shopping_cart),
+                      label: Text('Keranjang'),
+                    ),
+                    NavigationRailDestination(
+                      icon: Icon(Icons.person_outline),
+                      selectedIcon: Icon(Icons.person),
+                      label: Text('Profil'),
+                    ),
+                  ],
+                ),
+                const VerticalDivider(width: 1),
+                Expanded(
+                  child: IndexedStack(
+                    index: selectedIndex,
+                    children: pages,
+                  ),
+                ),
+              ],
+            ),
+          );
+        }
+
+        return Scaffold(
+          body: IndexedStack(
+            index: selectedIndex,
+            children: pages,
+          ),
+          bottomNavigationBar: NavigationBar(
+            selectedIndex: selectedIndex,
+            onDestinationSelected: (index) {
+              setState(() {
+                selectedIndex = index;
+              });
+            },
+            destinations: const [
+              NavigationDestination(
+                icon: Icon(Icons.home_outlined),
+                selectedIcon: Icon(Icons.home),
+                label: 'Home',
+              ),
+              NavigationDestination(
+                icon: Icon(Icons.medication_outlined),
+                selectedIcon: Icon(Icons.medication),
+                label: 'Katalog',
+              ),
+              NavigationDestination(
+                icon: Icon(Icons.star_border),
+                selectedIcon: Icon(Icons.star),
+                label: 'Tersimpan',
+              ),
+              NavigationDestination(
+                icon: Icon(Icons.shopping_cart_outlined),
+                selectedIcon: Icon(Icons.shopping_cart),
+                label: 'Keranjang',
+              ),
+              NavigationDestination(
+                icon: Icon(Icons.person_outline),
+                selectedIcon: Icon(Icons.person),
+                label: 'Profil',
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+}
+
+
+========================================
+FILE: C:\Users\putu\Desktop\project flutter\apotech_flutter_uts\lib\screens\openfda_test_screen.dart
+========================================
+import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+
+import '../providers/openfda_provider.dart';
+
+class OpenFdaTestScreen extends StatelessWidget {
+  const OpenFdaTestScreen({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Pengujian OpenFDA'),
+      ),
+      body: Consumer<OpenFdaProvider>(
+        builder: (context, provider, child) {
+          return Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                const Text(
+                  'Pengujian REST API OpenFDA',
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                const Text(
+                  'Tekan tombol untuk mengambil data produk '
+                  'dari OpenFDA.',
+                ),
+                const SizedBox(height: 16),
+                ElevatedButton.icon(
+                  onPressed: provider.isLoading
+                      ? null
+                      : () => provider.loadProducts(),
+                  icon: const Icon(Icons.cloud_download),
+                  label: const Text('Uji Koneksi OpenFDA'),
+                ),
+                const SizedBox(height: 16),
+                if (provider.isLoading)
+                  const Expanded(
+                    child: Center(
+                      child: CircularProgressIndicator(),
+                    ),
+                  )
+                else if (provider.errorMessage != null)
+                  Expanded(
+                    child: Center(
+                      child: Text(provider.errorMessage!),
+                    ),
+                  )
+                else if (provider.products.isEmpty)
+                  const Expanded(
+                    child: Center(
+                      child: Text(
+                        'Belum ada data. Tekan tombol pengujian.',
+                      ),
+                    ),
+                  )
+                else
+                  Expanded(
+                    child: ListView.builder(
+                      itemCount: provider.products.length,
+                      itemBuilder: (context, index) {
+                        final product = provider.products[index];
+
+                        return Card(
+                          margin: const EdgeInsets.only(bottom: 12),
+                          child: ListTile(
+                            title: Text(
+                              product.brandName.isNotEmpty
+                                  ? product.brandName
+                                  : product.genericName,
+                            ),
+                            subtitle: Text(
+                              'Nama generik: ${product.genericName}\n'
+                              'Produsen: ${product.manufacturer}\n'
+                              'NDC: ${product.productNdc}',
+                            ),
+                            isThreeLine: true,
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+              ],
+            ),
+          );
+        },
+      ),
+    );
+  }
+}
+
+
+========================================
+FILE: C:\Users\putu\Desktop\project flutter\apotech_flutter_uts\lib\screens\cart\cart_screen.dart
+========================================
 
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../providers/cart_provider.dart';
+import '../orders/order_history_screen.dart';
 import 'checkout_screen.dart';
 
 class CartScreen extends StatelessWidget {
@@ -647,6 +1117,15 @@ class CartScreen extends StatelessWidget {
 
   String _formatPrice(double price) {
     return 'Rp ${price.toStringAsFixed(0)}';
+  }
+
+  void _openOrderHistory(BuildContext context) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => const OrderHistoryScreen(),
+      ),
+    );
   }
 
   Future<void> _confirmRemove(
@@ -696,6 +1175,65 @@ class CartScreen extends StatelessWidget {
     }
   }
 
+  Widget _buildOrderHistoryButton(BuildContext context) {
+    return InkWell(
+      onTap: () => _openOrderHistory(context),
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(
+          horizontal: 14,
+          vertical: 12,
+        ),
+        decoration: BoxDecoration(
+          color: Colors.pink.shade50,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: Colors.pink.shade100,
+          ),
+        ),
+        child: Row(
+          children: [
+            const Icon(
+              Icons.receipt_long_outlined,
+              color: Colors.pink,
+              size: 25,
+            ),
+            const SizedBox(width: 12),
+            const Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Cek Pesanan Anda',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 14,
+                      color: Colors.pink,
+                    ),
+                  ),
+                  SizedBox(height: 3),
+                  Text(
+                    'Lihat status dan riwayat pesanan',
+                    style: TextStyle(
+                      fontSize: 11,
+                      color: Colors.black54,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Icon(
+              Icons.arrow_forward_ios,
+              size: 16,
+              color: Colors.pink.shade700,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -705,34 +1243,35 @@ class CartScreen extends StatelessWidget {
       body: Consumer<CartProvider>(
         builder: (context, cart, child) {
           if (cart.isEmpty) {
-            return const Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    Icons.shopping_cart_outlined,
-                    size: 75,
-                    color: Colors.grey,
+            return ListView(
+              padding: const EdgeInsets.all(16),
+              children: [
+                _buildOrderHistoryButton(context),
+                const SizedBox(height: 100),
+                const Icon(
+                  Icons.shopping_cart_outlined,
+                  size: 75,
+                  color: Colors.grey,
+                ),
+                const SizedBox(height: 16),
+                const Text(
+                  'Keranjang masih kosong',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 17,
+                    fontWeight: FontWeight.bold,
                   ),
-                  SizedBox(height: 16),
-                  Text(
-                    'Keranjang masih kosong',
-                    style: TextStyle(
-                      fontSize: 17,
-                      fontWeight: FontWeight.bold,
-                    ),
+                ),
+                const SizedBox(height: 8),
+                const Text(
+                  'Tambahkan produk dari apotek terlebih dahulu.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: Colors.black54,
+                    fontSize: 13,
                   ),
-                  SizedBox(height: 8),
-                  Text(
-                    'Tambahkan produk dari apotek terlebih dahulu.',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      color: Colors.black54,
-                      fontSize: 13,
-                    ),
-                  ),
-                ],
-              ),
+                ),
+              ],
             );
           }
 
@@ -742,6 +1281,9 @@ class CartScreen extends StatelessWidget {
                 child: ListView(
                   padding: const EdgeInsets.all(16),
                   children: [
+                    _buildOrderHistoryButton(context),
+                    const SizedBox(height: 20),
+
                     Container(
                       padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
@@ -829,8 +1371,7 @@ class CartScreen extends StatelessWidget {
                                     CrossAxisAlignment.start,
                                 children: [
                                   Container(
-                                    padding:
-                                        const EdgeInsets.all(12),
+                                    padding: const EdgeInsets.all(12),
                                     decoration: BoxDecoration(
                                       color: Colors.green.shade50,
                                       borderRadius:
@@ -851,8 +1392,7 @@ class CartScreen extends StatelessWidget {
                                         Text(
                                           item.name,
                                           style: const TextStyle(
-                                            fontWeight:
-                                                FontWeight.bold,
+                                            fontWeight: FontWeight.bold,
                                             fontSize: 14,
                                           ),
                                         ),
@@ -861,8 +1401,7 @@ class CartScreen extends StatelessWidget {
                                           _formatPrice(item.price),
                                           style: const TextStyle(
                                             color: Colors.green,
-                                            fontWeight:
-                                                FontWeight.bold,
+                                            fontWeight: FontWeight.bold,
                                           ),
                                         ),
                                         const SizedBox(height: 4),
@@ -924,27 +1463,28 @@ class CartScreen extends StatelessWidget {
                                         ),
                                       ),
                                       IconButton(
-                                        onPressed: item.quantity >=
-                                                item.stockQuantity
-                                            ? null
-                                            : () {
-                                                final success =
-                                                    cart.increaseQuantity(
-                                                  item.medicineId,
-                                                );
+                                        onPressed:
+                                            item.quantity >=
+                                                    item.stockQuantity
+                                                ? null
+                                                : () {
+                                                    final success =
+                                                        cart.increaseQuantity(
+                                                      item.medicineId,
+                                                    );
 
-                                                if (!success) {
-                                                  ScaffoldMessenger.of(
-                                                    context,
-                                                  ).showSnackBar(
-                                                    const SnackBar(
-                                                      content: Text(
-                                                        'Jumlah sudah mencapai batas stok.',
-                                                      ),
-                                                    ),
-                                                  );
-                                                }
-                                              },
+                                                    if (!success) {
+                                                      ScaffoldMessenger.of(
+                                                        context,
+                                                      ).showSnackBar(
+                                                        const SnackBar(
+                                                          content: Text(
+                                                            'Jumlah sudah mencapai batas stok.',
+                                                          ),
+                                                        ),
+                                                      );
+                                                    }
+                                                  },
                                         icon: const Icon(
                                           Icons.add_circle_outline,
                                         ),
@@ -1018,7 +1558,6 @@ class CartScreen extends StatelessWidget {
                         ),
                       ),
                       const SizedBox(height: 16),
-
                       SizedBox(
                         width: double.infinity,
                         height: 48,
@@ -1052,9 +1591,10 @@ class CartScreen extends StatelessWidget {
   }
 }
 
-==================================================
-FILE: lib\screens\cart\checkout_screen.dart
-==================================================
+
+========================================
+FILE: C:\Users\putu\Desktop\project flutter\apotech_flutter_uts\lib\screens\cart\checkout_screen.dart
+========================================
 
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -1062,23 +1602,175 @@ import 'package:provider/provider.dart';
 import '../../providers/cart_provider.dart';
 import '../../providers/order_provider.dart';
 
-class CheckoutScreen extends StatelessWidget {
+class CheckoutScreen extends StatefulWidget {
   const CheckoutScreen({super.key});
+
+  @override
+  State<CheckoutScreen> createState() => _CheckoutScreenState();
+}
+
+class _CheckoutScreenState extends State<CheckoutScreen> {
+  DateTime? _pickupDateTime;
+
+  DateTime get _today {
+    final now = DateTime.now();
+    return DateTime(now.year, now.month, now.day);
+  }
+
+  // Batas pengambilan maksimal 14 hari dari hari pemesanan.
+  DateTime get _lastPickupDate {
+    return _today.add(const Duration(days: 14));
+  }
 
   String _formatPrice(double price) {
     return 'Rp ${price.toStringAsFixed(0)}';
   }
 
+  String _formatDate(DateTime date) {
+    const months = [
+      'Januari',
+      'Februari',
+      'Maret',
+      'April',
+      'Mei',
+      'Juni',
+      'Juli',
+      'Agustus',
+      'September',
+      'Oktober',
+      'November',
+      'Desember',
+    ];
+
+    return '${date.day} ${months[date.month - 1]} ${date.year}';
+  }
+
+  String _formatTime(DateTime date) {
+    return '${date.hour.toString().padLeft(2, '0')}:'
+        '${date.minute.toString().padLeft(2, '0')}';
+  }
+
+  Future<void> _selectPickupDate() async {
+    final selected = await showDatePicker(
+      context: context,
+      initialDate: _pickupDateTime ?? _today,
+      firstDate: _today,
+      lastDate: _lastPickupDate,
+      helpText: 'Pilih Tanggal Pengambilan',
+      cancelText: 'Batal',
+      confirmText: 'Pilih',
+    );
+
+    if (selected == null || !mounted) return;
+
+    setState(() {
+      _pickupDateTime = DateTime(
+        selected.year,
+        selected.month,
+        selected.day,
+        7,
+      );
+    });
+  }
+
+  Future<void> _selectPickupTime() async {
+    if (_pickupDateTime == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Pilih tanggal pengambilan terlebih dahulu.',
+          ),
+        ),
+      );
+      return;
+    }
+
+    final selected = await showTimePicker(
+      context: context,
+      initialTime: TimeOfDay(
+        hour: _pickupDateTime!.hour,
+        minute: _pickupDateTime!.minute,
+      ),
+      helpText: 'Pilih Jam Pengambilan',
+    );
+
+    if (selected == null || !mounted) return;
+
+    final selectedDateTime = DateTime(
+      _pickupDateTime!.year,
+      _pickupDateTime!.month,
+      _pickupDateTime!.day,
+      selected.hour,
+      selected.minute,
+    );
+
+    // Batas jam sementara: 07.00 sampai 22.00.
+    final isWithinOpeningHours =
+        (selected.hour > 7 ||
+            (selected.hour == 7 && selected.minute >= 0)) &&
+        (selected.hour < 22 ||
+            (selected.hour == 22 && selected.minute == 0));
+
+    if (!isWithinOpeningHours) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Pengambilan hanya tersedia pukul 07.00â€“22.00.',
+          ),
+        ),
+      );
+      return;
+    }
+
+    if (!selectedDateTime.isAfter(DateTime.now())) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Pilih waktu pengambilan yang belum lewat.',
+          ),
+        ),
+      );
+      return;
+    }
+
+    setState(() {
+      _pickupDateTime = selectedDateTime;
+    });
+  }
+
   Future<void> _confirmOrder(BuildContext context) async {
+    if (_pickupDateTime == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Silakan tentukan tanggal dan jam pengambilan.',
+          ),
+        ),
+      );
+      return;
+    }
+
+    if (!_pickupDateTime!.isAfter(DateTime.now())) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Jadwal pengambilan sudah lewat. Silakan pilih jadwal lain.',
+          ),
+        ),
+      );
+      return;
+    }
+
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (dialogContext) {
         return AlertDialog(
           title: const Text('Konfirmasi Pesanan'),
-          content: const Text(
-            'Apakah Anda yakin ingin mengonfirmasi pesanan ini? '
-            'Pesanan ini merupakan simulasi dan perlu dikonfirmasi '
-            'dalam waktu 24 jam.',
+          content: Text(
+            'Apakah Anda yakin ingin mengonfirmasi pesanan ini?\n\n'
+            'Jadwal Pengambilan:\n'
+            '${_formatDate(_pickupDateTime!)} '
+            'pukul ${_formatTime(_pickupDateTime!)}',
           ),
           actions: [
             TextButton(
@@ -1103,12 +1795,18 @@ class CheckoutScreen extends StatelessWidget {
     final cart = context.read<CartProvider>();
     final orderProvider = context.read<OrderProvider>();
 
-    final success = await orderProvider.createOrder(cart);
+    final success = await orderProvider.createOrder(
+      cart,
+      pickupDate: _pickupDateTime!,
+    );
 
     if (!context.mounted) return;
 
     if (success) {
-      final order = orderProvider.lastOrder;
+  // Kosongkan keranjang setelah pesanan berhasil disimpan.
+  cart.clearCart();
+
+  final order = orderProvider.lastOrder;
 
       final orderId = order?['id']?.toString() ?? '-';
 
@@ -1137,7 +1835,7 @@ class CheckoutScreen extends StatelessWidget {
                 const Text(
                   'Pesanan Anda berhasil dibuat dan tersimpan.',
                 ),
-                const SizedBox(height: 20),
+                const SizedBox(height: 16),
                 const Text(
                   'Nomor Resi',
                   style: TextStyle(
@@ -1152,6 +1850,22 @@ class CheckoutScreen extends StatelessWidget {
                     fontWeight: FontWeight.bold,
                     fontSize: 18,
                     color: Colors.green,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                const Text(
+                  'Jadwal Pengambilan',
+                  style: TextStyle(
+                    color: Colors.black54,
+                    fontSize: 12,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  '${_formatDate(_pickupDateTime!)} '
+                  'pukul ${_formatTime(_pickupDateTime!)}',
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
                   ),
                 ),
                 const SizedBox(height: 16),
@@ -1242,7 +1956,62 @@ class CheckoutScreen extends StatelessWidget {
                   subtitle: const Text('Apotek pilihan Anda'),
                 ),
               ),
+
               const SizedBox(height: 24),
+
+              const Text(
+                'Jadwal Pengambilan',
+                style: TextStyle(
+                  fontSize: 17,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 8),
+              const Text(
+                'Pilih tanggal pengambilan maksimal '
+                '14 hari sejak tanggal pemesanan.',
+                style: TextStyle(color: Colors.black54),
+              ),
+              const SizedBox(height: 12),
+
+              Card(
+                child: Column(
+                  children: [
+                    ListTile(
+                      leading: const Icon(
+                        Icons.calendar_month,
+                        color: Colors.green,
+                      ),
+                      title: const Text('Tanggal Pengambilan'),
+                      subtitle: Text(
+                        _pickupDateTime == null
+                            ? 'Belum dipilih'
+                            : _formatDate(_pickupDateTime!),
+                      ),
+                      trailing: const Icon(Icons.chevron_right),
+                      onTap: _selectPickupDate,
+                    ),
+                    const Divider(height: 1),
+                    ListTile(
+                      leading: const Icon(
+                        Icons.access_time,
+                        color: Colors.green,
+                      ),
+                      title: const Text('Jam Pengambilan'),
+                      subtitle: Text(
+                        _pickupDateTime == null
+                            ? 'Belum dipilih'
+                            : _formatTime(_pickupDateTime!),
+                      ),
+                      trailing: const Icon(Icons.chevron_right),
+                      onTap: _selectPickupTime,
+                    ),
+                  ],
+                ),
+              ),
+
+              const SizedBox(height: 24),
+
               const Text(
                 'Ringkasan Produk',
                 style: TextStyle(
@@ -1251,6 +2020,7 @@ class CheckoutScreen extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 10),
+
               ...cart.items.map(
                 (item) => Card(
                   child: ListTile(
@@ -1268,17 +2038,16 @@ class CheckoutScreen extends StatelessWidget {
                   ),
                 ),
               ),
+
               const SizedBox(height: 20),
+
               Card(
                 color: Colors.green.shade50,
                 child: Padding(
                   padding: const EdgeInsets.all(16),
                   child: Column(
                     children: [
-                      const Text(
-                        'Total Pesanan',
-                        style: TextStyle(fontSize: 14),
-                      ),
+                      const Text('Total Pesanan'),
                       const SizedBox(height: 8),
                       Text(
                         _formatPrice(cart.totalPrice),
@@ -1292,7 +2061,9 @@ class CheckoutScreen extends StatelessWidget {
                   ),
                 ),
               ),
+
               const SizedBox(height: 16),
+
               Container(
                 padding: const EdgeInsets.all(14),
                 decoration: BoxDecoration(
@@ -1300,13 +2071,15 @@ class CheckoutScreen extends StatelessWidget {
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: const Text(
-                  'Catatan: Ini merupakan pemesanan simulasi. '
-                  'Pesanan perlu dikonfirmasi dalam waktu 24 jam. '
-                  'Belum ada transaksi atau pengambilan sungguhan.',
+                  'Catatan: Pesanan ini merupakan simulasi. '
+                  'Pastikan Anda mengambil pesanan sesuai '
+                  'jadwal yang telah dipilih.',
                   style: TextStyle(fontSize: 12),
                 ),
               ),
+
               const SizedBox(height: 24),
+
               Consumer<OrderProvider>(
                 builder: (context, orderProvider, child) {
                   return ElevatedButton(
@@ -1333,9 +2106,246 @@ class CheckoutScreen extends StatelessWidget {
   }
 }
 
-==================================================
-FILE: lib\screens\health\health_information_screen.dart
-==================================================
+
+========================================
+FILE: C:\Users\putu\Desktop\project flutter\apotech_flutter_uts\lib\screens\feedback\feedback_screen.dart
+========================================
+import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+
+import '../../providers/profile_provider.dart';
+import '../../services/feedback_service.dart';
+
+class FeedbackScreen extends StatefulWidget {
+  const FeedbackScreen({super.key});
+
+  @override
+  State<FeedbackScreen> createState() => _FeedbackScreenState();
+}
+
+class _FeedbackScreenState extends State<FeedbackScreen> {
+  final _formKey = GlobalKey<FormState>();
+  final _messageController = TextEditingController();
+  final _service = FeedbackService();
+
+  int _rating = 0;
+  bool _isSubmitting = false;
+
+  static const Color primaryColor = Color(0xFF7653B5);
+
+  @override
+  void dispose() {
+    _messageController.dispose();
+    super.dispose();
+  }
+
+  String? _validateMessage(String? value) {
+    final text = value?.trim() ?? '';
+
+    if (text.isEmpty) {
+      return 'Feedback wajib diisi.';
+    }
+
+    if (text.length < 2) {
+      return 'Feedback minimal terdiri dari 2 karakter.';
+    }
+
+    if (RegExp(r'^[0-9]+$').hasMatch(text)) {
+      return 'Feedback tidak boleh hanya berisi angka.';
+    }
+
+    if (!RegExp(r'[A-Za-z]').hasMatch(text)) {
+      return 'Feedback harus mengandung huruf.';
+    }
+
+    return null;
+  }
+
+  Future<void> _submitFeedback() async {
+    if (!_formKey.currentState!.validate()) return;
+
+    if (_rating == 0) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Silakan pilih rating terlebih dahulu.'),
+        ),
+      );
+      return;
+    }
+
+    final profile = context.read<ProfileProvider>().profile;
+
+    setState(() => _isSubmitting = true);
+
+    try {
+      await _service.submitFeedback(
+        customerId: profile?.customerId,
+        fullName: profile?.fullName,
+        rating: _rating,
+        message: _messageController.text,
+      );
+
+      if (!mounted) return;
+
+      _messageController.clear();
+
+      setState(() {
+        _rating = 0;
+        _isSubmitting = false;
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Terima kasih! Feedback berhasil dikirim.'),
+          backgroundColor: Colors.green,
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+
+      setState(() => _isSubmitting = false);
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Gagal mengirim feedback: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: const Color(0xFFF8F7FB),
+      appBar: AppBar(
+        title: const Text(
+          'Feedback ApoTech',
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
+        backgroundColor: Colors.white,
+        foregroundColor: Colors.black87,
+        elevation: 0,
+      ),
+      body: Form(
+        key: _formKey,
+        child: ListView(
+          padding: const EdgeInsets.all(20),
+          children: [
+            const Icon(
+              Icons.rate_review_outlined,
+              size: 65,
+              color: primaryColor,
+            ),
+            const SizedBox(height: 16),
+            const Text(
+              'Berikan Feedback Anda!',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 21,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 8),
+            const Text(
+              'Bagaimana pengalaman Anda menggunakan aplikasi ApoTech? '
+              'Masukan Anda membantu kami meningkatkan kualitas aplikasi.',
+              textAlign: TextAlign.center,
+              style: TextStyle(color: Colors.black54),
+            ),
+            const SizedBox(height: 28),
+            const Text(
+              'Berikan Penilaian',
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 12),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: List.generate(5, (index) {
+                final selected = index < _rating;
+
+                return IconButton(
+                  onPressed: _isSubmitting
+                      ? null
+                      : () => setState(() => _rating = index + 1),
+                  icon: Icon(
+                    selected ? Icons.star : Icons.star_border,
+                    color: Colors.amber,
+                    size: 36,
+                  ),
+                );
+              }),
+            ),
+            Center(
+              child: Text(
+                _rating == 0
+                    ? 'Belum ada penilaian'
+                    : '$_rating dari 5 bintang',
+                style: const TextStyle(color: Colors.black54),
+              ),
+            ),
+            const SizedBox(height: 24),
+            const Text(
+              'Tulis Feedback Anda',
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 10),
+            TextFormField(
+              controller: _messageController,
+              maxLines: 5,
+              maxLength: 500,
+              validator: _validateMessage,
+              decoration: InputDecoration(
+                hintText: 'Tuliskan kritik, saran, atau pengalaman Anda...',
+                filled: true,
+                fillColor: Colors.white,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(color: Colors.grey.shade300),
+                ),
+              ),
+            ),
+            const SizedBox(height: 20),
+            SizedBox(
+              height: 50,
+              child: ElevatedButton.icon(
+                onPressed: _isSubmitting ? null : _submitFeedback,
+                icon: _isSubmitting
+                    ? const SizedBox(
+                        height: 18,
+                        width: 18,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Colors.white,
+                        ),
+                      )
+                    : const Icon(Icons.send),
+                label: Text(
+                  _isSubmitting ? 'Mengirim...' : 'Kirim Feedback',
+                ),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: primaryColor,
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+
+========================================
+FILE: C:\Users\putu\Desktop\project flutter\apotech_flutter_uts\lib\screens\health\health_information_screen.dart
+========================================
 
 import 'package:flutter/material.dart';
 
@@ -1362,9 +2372,10 @@ class HealthInformationScreen extends StatelessWidget {
 }
 
 
-==================================================
-FILE: lib\screens\home\home_screen.dart
-==================================================
+
+========================================
+FILE: C:\Users\putu\Desktop\project flutter\apotech_flutter_uts\lib\screens\home\home_screen.dart
+========================================
 
 import 'package:flutter/material.dart';
 
@@ -1667,145 +2678,10 @@ class HomeScreen extends StatelessWidget {
   }
 }
 
-==================================================
-FILE: lib\screens\main_navigation_screen.dart
-==================================================
 
-import 'package:flutter/material.dart';
-
-import 'home/home_screen.dart';
-import 'medicines/medicine_list_screen.dart';
-import 'medicines/favorite_screen.dart';
-import 'cart/cart_screen.dart';
-import 'orders/order_history_screen.dart';
-
-class MainNavigationScreen extends StatefulWidget {
-  const MainNavigationScreen({super.key});
-
-  @override
-  State<MainNavigationScreen> createState() =>
-      _MainNavigationScreenState();
-}
-
-class _MainNavigationScreenState
-    extends State<MainNavigationScreen> {
-  int selectedIndex = 0;
-
-  final List<Widget> pages = const [
-    HomeScreen(),
-    MedicineListScreen(),
-    FavoriteScreen(),
-    CartScreen(),
-    OrderHistoryScreen(),
-  ];
-
-  @override
-  Widget build(BuildContext context) {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final isWideScreen = constraints.maxWidth >= 800;
-
-        if (isWideScreen) {
-          return Scaffold(
-            body: Row(
-              children: [
-                NavigationRail(
-                  selectedIndex: selectedIndex,
-                  onDestinationSelected: (index) {
-                    setState(() {
-                      selectedIndex = index;
-                    });
-                  },
-                  labelType: NavigationRailLabelType.all,
-                  destinations: const [
-                    NavigationRailDestination(
-                      icon: Icon(Icons.home_outlined),
-                      selectedIcon: Icon(Icons.home),
-                      label: Text('Home'),
-                    ),
-                    NavigationRailDestination(
-                      icon: Icon(Icons.medication_outlined),
-                      selectedIcon: Icon(Icons.medication),
-                      label: Text('Katalog'),
-                    ),
-                    NavigationRailDestination(
-                      icon: Icon(Icons.star_border),
-                      selectedIcon: Icon(Icons.star),
-                      label: Text('Tersimpan'),
-                    ),
-                    NavigationRailDestination(
-                      icon: Icon(Icons.shopping_cart_outlined),
-                      selectedIcon: Icon(Icons.shopping_cart),
-                      label: Text('Keranjang'),
-                    ),
-                    NavigationRailDestination(
-                      icon: Icon(Icons.history_outlined),
-                      selectedIcon: Icon(Icons.history),
-                      label: Text('Riwayat'),
-                    ),
-                  ],
-                ),
-                const VerticalDivider(width: 1),
-                Expanded(
-                  child: IndexedStack(
-                    index: selectedIndex,
-                    children: pages,
-                  ),
-                ),
-              ],
-            ),
-          );
-        }
-
-        return Scaffold(
-          body: IndexedStack(
-            index: selectedIndex,
-            children: pages,
-          ),
-          bottomNavigationBar: NavigationBar(
-            selectedIndex: selectedIndex,
-            onDestinationSelected: (index) {
-              setState(() {
-                selectedIndex = index;
-              });
-            },
-            destinations: const [
-              NavigationDestination(
-                icon: Icon(Icons.home_outlined),
-                selectedIcon: Icon(Icons.home),
-                label: 'Home',
-              ),
-              NavigationDestination(
-                icon: Icon(Icons.medication_outlined),
-                selectedIcon: Icon(Icons.medication),
-                label: 'Katalog',
-              ),
-              NavigationDestination(
-                icon: Icon(Icons.star_border),
-                selectedIcon: Icon(Icons.star),
-                label: 'Tersimpan',
-              ),
-              NavigationDestination(
-                icon: Icon(Icons.shopping_cart_outlined),
-                selectedIcon: Icon(Icons.shopping_cart),
-                label: 'Keranjang',
-              ),
-              NavigationDestination(
-                icon: Icon(Icons.history_outlined),
-                selectedIcon: Icon(Icons.history),
-                label: 'Riwayat',
-              ),
-            ],
-          ),
-        );
-      },
-    );
-  }
-}
-
-==================================================
-FILE: lib\screens\medicines\favorite_screen.dart
-==================================================
+========================================
+FILE: C:\Users\putu\Desktop\project flutter\apotech_flutter_uts\lib\screens\medicines\favorite_screen.dart
+========================================
 
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -1954,9 +2830,10 @@ class FavoriteScreen extends StatelessWidget {
   }
 }
 
-==================================================
-FILE: lib\screens\medicines\medicine_detail_screen.dart
-==================================================
+
+========================================
+FILE: C:\Users\putu\Desktop\project flutter\apotech_flutter_uts\lib\screens\medicines\medicine_detail_screen.dart
+========================================
 
 import 'package:flutter/material.dart';
 
@@ -2145,9 +3022,10 @@ class _MedicineDetailScreenState
   }
 }
 
-==================================================
-FILE: lib\screens\medicines\medicine_list_screen.dart
-==================================================
+
+========================================
+FILE: C:\Users\putu\Desktop\project flutter\apotech_flutter_uts\lib\screens\medicines\medicine_list_screen.dart
+========================================
 
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -2466,9 +3344,10 @@ class _MedicineListScreenState extends State<MedicineListScreen> {
   }
 }
 
-==================================================
-FILE: lib\screens\medicines\openfda_product_detail_screen.dart
-==================================================
+
+========================================
+FILE: C:\Users\putu\Desktop\project flutter\apotech_flutter_uts\lib\screens\medicines\openfda_product_detail_screen.dart
+========================================
 
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -2755,109 +3634,10 @@ class OpenFdaProductDetailScreen extends StatelessWidget {
   }
 }
 
-==================================================
-FILE: lib\screens\openfda_test_screen.dart
-==================================================
-import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 
-import '../providers/openfda_provider.dart';
-
-class OpenFdaTestScreen extends StatelessWidget {
-  const OpenFdaTestScreen({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Pengujian OpenFDA'),
-      ),
-      body: Consumer<OpenFdaProvider>(
-        builder: (context, provider, child) {
-          return Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                const Text(
-                  'Pengujian REST API OpenFDA',
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                const Text(
-                  'Tekan tombol untuk mengambil data produk '
-                  'dari OpenFDA.',
-                ),
-                const SizedBox(height: 16),
-                ElevatedButton.icon(
-                  onPressed: provider.isLoading
-                      ? null
-                      : () => provider.loadProducts(),
-                  icon: const Icon(Icons.cloud_download),
-                  label: const Text('Uji Koneksi OpenFDA'),
-                ),
-                const SizedBox(height: 16),
-                if (provider.isLoading)
-                  const Expanded(
-                    child: Center(
-                      child: CircularProgressIndicator(),
-                    ),
-                  )
-                else if (provider.errorMessage != null)
-                  Expanded(
-                    child: Center(
-                      child: Text(provider.errorMessage!),
-                    ),
-                  )
-                else if (provider.products.isEmpty)
-                  const Expanded(
-                    child: Center(
-                      child: Text(
-                        'Belum ada data. Tekan tombol pengujian.',
-                      ),
-                    ),
-                  )
-                else
-                  Expanded(
-                    child: ListView.builder(
-                      itemCount: provider.products.length,
-                      itemBuilder: (context, index) {
-                        final product = provider.products[index];
-
-                        return Card(
-                          margin: const EdgeInsets.only(bottom: 12),
-                          child: ListTile(
-                            title: Text(
-                              product.brandName.isNotEmpty
-                                  ? product.brandName
-                                  : product.genericName,
-                            ),
-                            subtitle: Text(
-                              'Nama generik: ${product.genericName}\n'
-                              'Produsen: ${product.manufacturer}\n'
-                              'NDC: ${product.productNdc}',
-                            ),
-                            isThreeLine: true,
-                          ),
-                        );
-                      },
-                    ),
-                  ),
-              ],
-            ),
-          );
-        },
-      ),
-    );
-  }
-}
-
-==================================================
-FILE: lib\screens\orders\order_history_screen.dart
-==================================================
+========================================
+FILE: C:\Users\putu\Desktop\project flutter\apotech_flutter_uts\lib\screens\orders\order_history_screen.dart
+========================================
 
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -2888,44 +3668,34 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
     final value = double.tryParse(price.toString()) ?? 0;
 
     return 'Rp ${value.toStringAsFixed(0).replaceAllMapped(
-          RegExp(r'(\d)(?=(\d{3})+(?!\d))'),
-          (match) => '${match[1]}.',
-        )}';
+      RegExp(r'(\d)(?=(\d{3})+(?!\d))'),
+      (match) => '${match[1]}.',
+    )}';
   }
 
   String _formatDate(dynamic date) {
-    final parsedDate = DateTime.tryParse(date.toString());
+    if (date == null) return 'Belum ditentukan';
 
-    if (parsedDate == null) return '-';
+    final parsed = DateTime.tryParse(date.toString());
+    if (parsed == null) return '-';
 
-    final localDate = parsedDate.toLocal();
+    final d = parsed.toLocal();
 
     const months = [
-      'Januari',
-      'Februari',
-      'Maret',
-      'April',
-      'Mei',
-      'Juni',
-      'Juli',
-      'Agustus',
-      'September',
-      'Oktober',
-      'November',
-      'Desember',
+      'Januari', 'Februari', 'Maret', 'April',
+      'Mei', 'Juni', 'Juli', 'Agustus',
+      'September', 'Oktober', 'November', 'Desember',
     ];
 
-    return '${localDate.day} ${months[localDate.month - 1]} '
-        '${localDate.year}, '
-        '${localDate.hour.toString().padLeft(2, '0')}:'
-        '${localDate.minute.toString().padLeft(2, '0')}';
+    return '${d.day} ${months[d.month - 1]} ${d.year}, '
+        '${d.hour.toString().padLeft(2, '0')}:'
+        '${d.minute.toString().padLeft(2, '0')}';
   }
 
   Map<String, dynamic> _asMap(dynamic value) {
     if (value is Map) {
       return Map<String, dynamic>.from(value);
     }
-
     return {};
   }
 
@@ -2936,7 +3706,6 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
           .map((item) => Map<String, dynamic>.from(item))
           .toList();
     }
-
     return [];
   }
 
@@ -2970,11 +3739,129 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
     }
   }
 
+  Future<void> _changePickupDate(
+    Map<String, dynamic> order,
+  ) async {
+    final orderId = int.tryParse(order['id'].toString());
+    if (orderId == null) return;
+
+    final currentPickup = order['pickup_at'] == null
+        ? null
+        : DateTime.tryParse(order['pickup_at'].toString())?.toLocal();
+
+    final now = DateTime.now();
+
+    final selected = await showDatePicker(
+      context: context,
+      initialDate: currentPickup != null &&
+              currentPickup.isAfter(now)
+          ? currentPickup
+          : now,
+      firstDate: DateTime(now.year, now.month, now.day),
+      lastDate: DateTime(now.year + 1, 12, 31),
+      helpText: 'Pilih tanggal pengambilan',
+    );
+
+    if (selected == null || !mounted) return;
+
+    final selectedTime = await showTimePicker(
+      context: context,
+      initialTime: currentPickup != null
+          ? TimeOfDay.fromDateTime(currentPickup)
+          : TimeOfDay.now(),
+      helpText: 'Pilih jam pengambilan',
+    );
+
+    if (selectedTime == null || !mounted) return;
+
+    final pickupDate = DateTime(
+      selected.year,
+      selected.month,
+      selected.day,
+      selectedTime.hour,
+      selectedTime.minute,
+    );
+
+    if (pickupDate.isBefore(DateTime.now())) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Tanggal dan jam harus di masa depan.'),
+        ),
+      );
+      return;
+    }
+
+    final success = await context.read<OrderProvider>()
+        .updatePickupDate(
+          orderId: orderId,
+          pickupDate: pickupDate,
+        );
+
+    if (!mounted) return;
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          success
+              ? 'Tanggal pengambilan berhasil diperbarui.'
+              : 'Gagal mengubah tanggal. Pastikan pesanan masih menunggu.',
+        ),
+      ),
+    );
+  }
+
+  Future<void> _cancelOrder(Map<String, dynamic> order) async {
+    final orderId = int.tryParse(order['id'].toString());
+    if (orderId == null) return;
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Batalkan Pesanan?'),
+        content: const Text(
+          'Apakah kamu yakin ingin membatalkan pesanan ini? '
+          'Pesanan yang sudah diproses tidak dapat dibatalkan.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: const Text('Kembali'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(dialogContext, true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+              foregroundColor: Colors.white,
+            ),
+            child: const Text('Ya, Batalkan'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true || !mounted) return;
+
+    final success = await context.read<OrderProvider>()
+        .cancelOrder(orderId);
+
+    if (!mounted) return;
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          success
+              ? 'Pesanan berhasil dibatalkan.'
+              : 'Pesanan tidak dapat dibatalkan karena statusnya sudah berubah.',
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Riwayat Pesanan'),
+        title: const Text('Pesanan Saya'),
         actions: [
           IconButton(
             tooltip: 'Muat ulang',
@@ -3007,24 +3894,16 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
                       color: Colors.red,
                     ),
                     const SizedBox(height: 12),
-                    const Text(
-                      'Gagal memuat riwayat pesanan.',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(fontSize: 16),
-                    ),
+                    const Text('Gagal memuat pesanan.'),
                     const SizedBox(height: 8),
                     Text(
                       provider.errorMessage!,
                       textAlign: TextAlign.center,
-                      style: const TextStyle(
-                        color: Colors.grey,
-                      ),
                     ),
-                    const SizedBox(height: 16),
-                    ElevatedButton.icon(
-                      onPressed: () => provider.loadOrders(),
-                      icon: const Icon(Icons.refresh),
-                      label: const Text('Coba Lagi'),
+                    const SizedBox(height: 12),
+                    ElevatedButton(
+                      onPressed: provider.loadOrders,
+                      child: const Text('Coba Lagi'),
                     ),
                   ],
                 ),
@@ -3033,66 +3912,52 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
           }
 
           if (provider.orders.isEmpty) {
-            return Center(
-              child: Padding(
-                padding: const EdgeInsets.all(24),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(
-                      Icons.receipt_long_outlined,
-                      size: 72,
-                      color: Colors.grey.shade400,
+            return const Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    Icons.receipt_long_outlined,
+                    size: 72,
+                    color: Colors.grey,
+                  ),
+                  SizedBox(height: 16),
+                  Text(
+                    'Belum Ada Pesanan',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
                     ),
-                    const SizedBox(height: 16),
-                    const Text(
-                      'Belum Ada Pesanan',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      'Pesanan yang kamu buat akan muncul di sini.',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        color: Colors.grey.shade600,
-                      ),
-                    ),
-                  ],
-                ),
+                  ),
+                  SizedBox(height: 8),
+                  Text('Pesanan kamu akan muncul di sini.'),
+                ],
               ),
             );
           }
 
           return RefreshIndicator(
-            onRefresh: () => provider.loadOrders(),
+            onRefresh: provider.loadOrders,
             child: ListView.builder(
               padding: const EdgeInsets.all(16),
               itemCount: provider.orders.length,
               itemBuilder: (context, index) {
                 final order = provider.orders[index];
-
                 final pharmacy = _asMap(order['pharmacies']);
-                final orderItems = _asMapList(order['order_items']);
-
-                final pharmacyName =
-                    pharmacy['name']?.toString() ?? 'Apotek';
+                final items = _asMapList(order['order_items']);
 
                 final status =
                     order['order_status']?.toString() ?? 'unknown';
+                final isPending = status.toLowerCase() == 'pending';
 
                 return Card(
                   margin: const EdgeInsets.only(bottom: 16),
-                  elevation: 2,
                   child: Padding(
                     padding: const EdgeInsets.all(16),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             const Icon(
                               Icons.local_pharmacy_outlined,
@@ -3106,112 +3971,138 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
                                     CrossAxisAlignment.start,
                                 children: [
                                   Text(
-                                    pharmacyName,
+                                    pharmacy['name']?.toString() ?? 'Apotek',
                                     style: const TextStyle(
-                                      fontSize: 16,
                                       fontWeight: FontWeight.bold,
+                                      fontSize: 16,
                                     ),
                                   ),
-                                  const SizedBox(height: 4),
                                   Text(
-                                    _formatDate(order['created_at']),
-                                    style: TextStyle(
-                                      color: Colors.grey.shade600,
+                                    'Pesanan #${order['id']}',
+                                    style: const TextStyle(
+                                      color: Colors.grey,
                                       fontSize: 12,
                                     ),
                                   ),
                                 ],
                               ),
                             ),
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 10,
-                                vertical: 6,
-                              ),
-                              decoration: BoxDecoration(
-                                color: _statusColor(status)
-                                    .withValues(alpha: 0.12),
-                                borderRadius: BorderRadius.circular(20),
-                              ),
-                              child: Text(
-                                _statusLabel(status),
-                                style: TextStyle(
-                                  color: _statusColor(status),
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w600,
-                                ),
+                            Chip(
+                              label: Text(_statusLabel(status)),
+                              backgroundColor:
+                                  _statusColor(status).withValues(alpha: 0.12),
+                              labelStyle: TextStyle(
+                                color: _statusColor(status),
+                                fontWeight: FontWeight.bold,
                               ),
                             ),
                           ],
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          'Dipesan: ${_formatDate(order['created_at'])}',
+                          style: const TextStyle(fontSize: 12),
                         ),
                         const Divider(height: 24),
                         const Text(
                           'Produk Pesanan',
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                          ),
+                          style: TextStyle(fontWeight: FontWeight.bold),
                         ),
                         const SizedBox(height: 8),
-                        if (orderItems.isEmpty)
-                          const Text(
-                            'Informasi produk tidak tersedia.',
-                            style: TextStyle(color: Colors.grey),
-                          )
-                        else
-                          ...orderItems.map((item) {
-                            final medicine =
-                                _asMap(item['medicines']);
+                        ...items.map((item) {
+                          final medicine = _asMap(item['medicines']);
 
-                            final medicineName =
-                                medicine['name']?.toString() ?? 'Produk';
-
-                            final quantity =
-                                item['quantity']?.toString() ?? '0';
-
-                            final subtotal = item['subtotal'];
-
-                            return Padding(
-                              padding: const EdgeInsets.symmetric(
-                                vertical: 5,
-                              ),
-                              child: Row(
-                                children: [
-                                  Expanded(
-                                    child: Text(medicineName),
+                          return Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 5),
+                            child: Row(
+                              children: [
+                                Expanded(
+                                  child: Text(
+                                    medicine['name']?.toString() ?? 'Produk',
                                   ),
-                                  Text('x$quantity'),
-                                  const SizedBox(width: 12),
-                                  Text(
-                                    _formatPrice(subtotal),
-                                    style: const TextStyle(
-                                      fontWeight: FontWeight.w500,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            );
-                          }),
+                                ),
+                                Text('x${item['quantity']}'),
+                                const SizedBox(width: 12),
+                                Text(_formatPrice(item['subtotal'])),
+                              ],
+                            ),
+                          );
+                        }),
                         const Divider(height: 24),
                         Row(
-                          mainAxisAlignment:
-                              MainAxisAlignment.spaceBetween,
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
                             const Text(
                               'Total Pesanan',
-                              style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                              ),
+                              style: TextStyle(fontWeight: FontWeight.bold),
                             ),
                             Text(
                               _formatPrice(order['total_price']),
                               style: const TextStyle(
-                                fontSize: 16,
                                 fontWeight: FontWeight.bold,
                                 color: Colors.pink,
+                                fontSize: 16,
                               ),
                             ),
                           ],
                         ),
+                        const SizedBox(height: 12),
+                        const Text(
+                          'Tanggal Pengambilan',
+                          style: TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                        const SizedBox(height: 5),
+                        Row(
+                          children: [
+                            const Icon(
+                              Icons.calendar_month,
+                              color: Colors.pink,
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                _formatDate(order['pickup_at']),
+                              ),
+                            ),
+                          ],
+                        ),
+                        if (isPending) ...[
+                          const SizedBox(height: 12),
+                          SizedBox(
+                            width: double.infinity,
+                            child: OutlinedButton.icon(
+                              onPressed: () => _changePickupDate(order),
+                              icon: const Icon(Icons.edit_calendar),
+                              label: const Text(
+                                'Ubah Tanggal Pengambilan',
+                              ),
+                            ),
+                          ),
+                          SizedBox(
+                            width: double.infinity,
+                            child: TextButton.icon(
+                              onPressed: () => _cancelOrder(order),
+                              icon: const Icon(
+                                Icons.cancel_outlined,
+                                color: Colors.red,
+                              ),
+                              label: const Text(
+                                'Batalkan Pesanan',
+                                style: TextStyle(color: Colors.red),
+                              ),
+                            ),
+                          ),
+                        ] else
+                          const Padding(
+                            padding: EdgeInsets.only(top: 12),
+                            child: Text(
+                              'Pesanan tidak dapat diubah pada status ini.',
+                              style: TextStyle(
+                                color: Colors.grey,
+                                fontSize: 12,
+                              ),
+                            ),
+                          ),
                       ],
                     ),
                   ),
@@ -3225,9 +4116,10 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
   }
 }
 
-==================================================
-FILE: lib\screens\pharmacies\pharmacy_detail_screen.dart
-==================================================
+
+========================================
+FILE: C:\Users\putu\Desktop\project flutter\apotech_flutter_uts\lib\screens\pharmacies\pharmacy_detail_screen.dart
+========================================
 
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -3740,9 +4632,10 @@ class PharmacyDetailScreen extends StatelessWidget {
   }
 }
 
-==================================================
-FILE: lib\screens\pharmacies\pharmacy_list_screen.dart
-==================================================
+
+========================================
+FILE: C:\Users\putu\Desktop\project flutter\apotech_flutter_uts\lib\screens\pharmacies\pharmacy_list_screen.dart
+========================================
 
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -4083,9 +4976,842 @@ class _PharmacyListScreenState extends State<PharmacyListScreen> {
   }
 }
 
-==================================================
-FILE: lib\services\local_medicine_service.dart
-==================================================
+
+========================================
+FILE: C:\Users\putu\Desktop\project flutter\apotech_flutter_uts\lib\screens\profile\edit_profile_screen.dart
+========================================
+
+import 'dart:io';
+
+import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:provider/provider.dart';
+
+import '../../models/profile.dart';
+import '../../providers/profile_provider.dart';
+
+const Color primaryColor = Color(0xFF7653B5);
+
+class EditProfileScreen extends StatefulWidget {
+  const EditProfileScreen({super.key});
+
+  @override
+  State<EditProfileScreen> createState() => _EditProfileScreenState();
+}
+
+class _EditProfileScreenState extends State<EditProfileScreen> {
+  final _formKey = GlobalKey<FormState>();
+
+  final _nameController = TextEditingController();
+  final _phoneController = TextEditingController();
+  final _emailController = TextEditingController();
+  final _addressController = TextEditingController();
+
+  File? _selectedImage;
+  bool _isInitialized = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+
+    if (!_isInitialized) {
+      final profile = context.read<ProfileProvider>().profile;
+
+      if (profile != null) {
+        _nameController.text = profile.fullName;
+        _phoneController.text = profile.phoneNumber;
+        _emailController.text = profile.email ?? '';
+        _addressController.text = profile.address ?? '';
+      }
+
+      _isInitialized = true;
+    }
+  }
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _phoneController.dispose();
+    _emailController.dispose();
+    _addressController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _pickImage() async {
+    try {
+      final picker = ImagePicker();
+
+      final image = await picker.pickImage(
+        source: ImageSource.gallery,
+        imageQuality: 80,
+        maxWidth: 1000,
+      );
+
+      if (image != null && mounted) {
+        setState(() {
+          _selectedImage = File(image.path);
+        });
+      }
+    } catch (e) {
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Gagal memilih foto: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
+  Future<void> _saveProfile() async {
+    if (!_formKey.currentState!.validate()) return;
+
+    final provider = context.read<ProfileProvider>();
+    final currentProfile = provider.profile;
+
+    if (currentProfile == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Data profil belum tersedia.'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    final updatedProfile = Profile(
+      id: currentProfile.id,
+      customerId: currentProfile.customerId,
+      fullName: _nameController.text.trim(),
+      phoneNumber: _phoneController.text.trim(),
+      email: _emailController.text.trim().isEmpty
+          ? null
+          : _emailController.text.trim(),
+      address: _addressController.text.trim().isEmpty
+          ? null
+          : _addressController.text.trim(),
+      createdAt: currentProfile.createdAt,
+      updatedAt: DateTime.now(),
+      avatarUrl: currentProfile.avatarUrl,
+    );
+
+    final profileSaved = await provider.updateProfile(updatedProfile);
+
+    if (!mounted) return;
+
+    if (!profileSaved) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            provider.errorMessage ?? 'Gagal menyimpan perubahan profil.',
+          ),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    if (_selectedImage != null) {
+      final photoSaved =
+          await provider.updateProfilePhoto(_selectedImage!);
+
+      if (!mounted) return;
+
+      if (!photoSaved) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              provider.errorMessage ??
+                  'Profil tersimpan, tetapi foto gagal diperbarui.',
+            ),
+            backgroundColor: Colors.orange,
+          ),
+        );
+        return;
+      }
+    }
+
+    if (!mounted) return;
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Profil berhasil diperbarui.'),
+        backgroundColor: Colors.green,
+      ),
+    );
+
+    Navigator.pop(context);
+  }
+
+  Widget _buildField({
+    required String label,
+    required TextEditingController controller,
+    required IconData icon,
+    String? hint,
+    TextInputType keyboardType = TextInputType.text,
+    String? Function(String?)? validator,
+    int maxLines = 1,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: const TextStyle(
+            fontWeight: FontWeight.w600,
+            fontSize: 14,
+          ),
+        ),
+        const SizedBox(height: 8),
+        TextFormField(
+          controller: controller,
+          keyboardType: keyboardType,
+          validator: validator,
+          maxLines: maxLines,
+          decoration: InputDecoration(
+            hintText: hint,
+            prefixIcon: Icon(icon, color: primaryColor),
+            filled: true,
+            fillColor: Colors.grey.shade50,
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(color: Colors.grey.shade300),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(color: Colors.grey.shade300),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(
+                color: primaryColor,
+                width: 1.5,
+              ),
+            ),
+            errorMaxLines: 2,
+          ),
+        ),
+      ],
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Consumer<ProfileProvider>(
+      builder: (context, provider, child) {
+        final profile = provider.profile;
+
+        if (profile == null && provider.isLoading) {
+          return Scaffold(
+            appBar: AppBar(title: const Text('Edit Profil')),
+            body: const Center(
+              child: CircularProgressIndicator(),
+            ),
+          );
+        }
+
+        if (profile == null) {
+          return Scaffold(
+            appBar: AppBar(title: const Text('Edit Profil')),
+            body: Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Text('Data profil tidak dapat dimuat.'),
+                  const SizedBox(height: 12),
+                  ElevatedButton(
+                    onPressed: provider.loadProfile,
+                    child: const Text('Coba Lagi'),
+                  ),
+                ],
+              ),
+            ),
+          );
+        }
+
+        return Scaffold(
+          backgroundColor: const Color(0xFFF7F7FA),
+          appBar: AppBar(
+            title: const Text(
+              'Edit Profil',
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
+            backgroundColor: Colors.white,
+            foregroundColor: Colors.black87,
+            elevation: 0,
+          ),
+          body: SafeArea(
+            child: Form(
+              key: _formKey,
+              child: ListView(
+                padding: const EdgeInsets.all(20),
+                children: [
+                  Center(
+                    child: Column(
+                      children: [
+                        Stack(
+                          children: [
+                            CircleAvatar(
+                              radius: 55,
+                              backgroundColor:
+                                  primaryColor.withValues(alpha: 0.12),
+                              backgroundImage: _selectedImage != null
+                                  ? FileImage(_selectedImage!)
+                                  : (profile.avatarUrl != null &&
+                                          profile.avatarUrl!.isNotEmpty
+                                      ? NetworkImage(profile.avatarUrl!)
+                                      : null) as ImageProvider?,
+                              child: _selectedImage == null &&
+                                      (profile.avatarUrl == null ||
+                                          profile.avatarUrl!.isEmpty)
+                                  ? const Icon(
+                                      Icons.person,
+                                      size: 55,
+                                      color: primaryColor,
+                                    )
+                                  : null,
+                            ),
+                            Positioned(
+                              bottom: 0,
+                              right: 0,
+                              child: InkWell(
+                                onTap: _pickImage,
+                                borderRadius: BorderRadius.circular(30),
+                                child: Container(
+                                  padding: const EdgeInsets.all(9),
+                                  decoration: const BoxDecoration(
+                                    color: primaryColor,
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: const Icon(
+                                    Icons.camera_alt,
+                                    color: Colors.white,
+                                    size: 20,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 10),
+                        TextButton(
+                          onPressed: _pickImage,
+                          child: const Text(
+                            'Ubah Foto Profil',
+                            style: TextStyle(color: primaryColor),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  const SizedBox(height: 20),
+
+                  const Text(
+                    'Informasi Pribadi',
+                    style: TextStyle(
+                      fontSize: 17,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+
+                  const SizedBox(height: 16),
+
+                  _buildField(
+                    label: 'Nama Lengkap',
+                    controller: _nameController,
+                    icon: Icons.person_outline,
+                    hint: 'Masukkan nama lengkap',
+                    validator: (value) {
+                      if (value == null || value.trim().isEmpty) {
+                        return 'Nama lengkap wajib diisi.';
+                      }
+                      return null;
+                    },
+                  ),
+
+                  const SizedBox(height: 16),
+
+                  _buildField(
+                    label: 'Nomor Telepon',
+                    controller: _phoneController,
+                    icon: Icons.phone_outlined,
+                    hint: 'Masukkan nomor telepon',
+                    keyboardType: TextInputType.phone,
+                    validator: (value) {
+                      final phone = value?.trim() ?? '';
+
+                      if (phone.isEmpty) {
+                        return 'Nomor telepon wajib diisi.';
+                      }
+
+                      if (!RegExp(r'^[0-9+]+$').hasMatch(phone)) {
+                        return 'Nomor telepon hanya boleh berisi angka dan +.';
+                      }
+
+                      if (phone.length < 8) {
+                        return 'Nomor telepon minimal 8 karakter.';
+                      }
+
+                      return null;
+                    },
+                  ),
+
+                  const SizedBox(height: 16),
+
+                  _buildField(
+                    label: 'Email',
+                    controller: _emailController,
+                    icon: Icons.email_outlined,
+                    hint: 'Masukkan alamat email',
+                    keyboardType: TextInputType.emailAddress,
+                    validator: (value) {
+                      final email = value?.trim() ?? '';
+
+                      if (email.isNotEmpty &&
+                          !RegExp(
+                            r'^[^@\s]+@[^@\s]+\.[^@\s]+$',
+                          ).hasMatch(email)) {
+                        return 'Format email tidak valid.';
+                      }
+
+                      return null;
+                    },
+                  ),
+
+                  const SizedBox(height: 16),
+
+                  _buildField(
+                    label: 'Alamat',
+                    controller: _addressController,
+                    icon: Icons.location_on_outlined,
+                    hint: 'Masukkan alamat',
+                    maxLines: 3,
+                  ),
+
+                  const SizedBox(height: 24),
+
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton.icon(
+                      onPressed: provider.isSaving ? null : _saveProfile,
+                      icon: provider.isSaving
+                          ? const SizedBox(
+                              width: 18,
+                              height: 18,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: Colors.white,
+                              ),
+                            )
+                          : const Icon(Icons.save_outlined),
+                      label: Text(
+                        provider.isSaving
+                            ? 'Menyimpan...'
+                            : 'Simpan Perubahan',
+                      ),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: primaryColor,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 15),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                    ),
+                  ),
+
+                  const SizedBox(height: 20),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+}
+
+
+========================================
+FILE: C:\Users\putu\Desktop\project flutter\apotech_flutter_uts\lib\screens\profile\profile_screen.dart
+========================================
+
+import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+
+import '../../providers/profile_provider.dart';
+import '../cart/cart_screen.dart';
+import '../orders/order_history_screen.dart';
+import '../feedback/feedback_screen.dart';
+import 'edit_profile_screen.dart';
+
+class ProfileScreen extends StatelessWidget {
+  const ProfileScreen({super.key});
+
+  static const Color primaryColor = Color(0xFF7653B5);
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: const Color(0xFFF8F7FB),
+      appBar: AppBar(
+        title: const Text(
+          'Profil Saya',
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
+        backgroundColor: Colors.white,
+        foregroundColor: Colors.black87,
+        elevation: 0,
+      ),
+      body: Consumer<ProfileProvider>(
+        builder: (context, provider, child) {
+          if (provider.isLoading && provider.profile == null) {
+            return const Center(
+              child: CircularProgressIndicator(
+                color: primaryColor,
+              ),
+            );
+          }
+
+          if (provider.errorMessage != null &&
+              provider.profile == null) {
+            return Center(
+              child: Padding(
+                padding: const EdgeInsets.all(24),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(
+                      Icons.error_outline,
+                      size: 48,
+                      color: Colors.redAccent,
+                    ),
+                    const SizedBox(height: 12),
+                    Text(
+                      provider.errorMessage!,
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 16),
+                    ElevatedButton(
+                      onPressed: () => provider.loadProfile(),
+                      child: const Text('Coba Lagi'),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          }
+
+          final profile = provider.profile;
+
+          if (profile == null) {
+            return const Center(
+              child: Text('Data profil belum tersedia.'),
+            );
+          }
+
+          return RefreshIndicator(
+            color: primaryColor,
+            onRefresh: provider.loadProfile,
+            child: ListView(
+              padding: const EdgeInsets.all(20),
+              children: [
+                // KARTU PROFIL
+                Container(
+                  padding: const EdgeInsets.all(24),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Column(
+                    children: [
+                      CircleAvatar(
+                        radius: 48,
+                        backgroundColor:
+                            primaryColor.withValues(alpha: 0.12),
+                        backgroundImage:
+                            profile.avatarUrl != null &&
+                                    profile.avatarUrl!.isNotEmpty
+                                ? NetworkImage(profile.avatarUrl!)
+                                : null,
+                        child: profile.avatarUrl == null ||
+                                profile.avatarUrl!.isEmpty
+                            ? const Icon(
+                                Icons.person,
+                                size: 50,
+                                color: primaryColor,
+                              )
+                            : null,
+                      ),
+                      const SizedBox(height: 14),
+                      Text(
+                        profile.fullName,
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 5),
+                      Text(
+                        'ID Pelanggan: ${profile.customerId}',
+                        style: TextStyle(
+                          color: Colors.grey.shade600,
+                          fontSize: 13,
+                        ),
+                      ),
+                      const SizedBox(height: 18),
+
+                      // EDIT PROFIL
+                      SizedBox(
+                        width: double.infinity,
+                        child: OutlinedButton.icon(
+                          onPressed: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) =>
+                                    const EditProfileScreen(),
+                              ),
+                            );
+                          },
+                          icon: const Icon(Icons.edit_outlined),
+                          label: const Text('Edit Profil'),
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: primaryColor,
+                            side: const BorderSide(
+                              color: primaryColor,
+                            ),
+                            padding: const EdgeInsets.symmetric(
+                              vertical: 12,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+
+                const SizedBox(height: 22),
+
+                // INFORMASI AKUN
+                const Text(
+                  'Informasi Akun',
+                  style: TextStyle(
+                    fontSize: 17,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+
+                const SizedBox(height: 12),
+
+                _infoCard(
+                  icon: Icons.phone_outlined,
+                  title: 'Nomor Telepon',
+                  value: profile.phoneNumber,
+                ),
+
+                _infoCard(
+                  icon: Icons.email_outlined,
+                  title: 'Email',
+                  value: profile.email ?? '-',
+                ),
+
+                _infoCard(
+                  icon: Icons.location_on_outlined,
+                  title: 'Alamat',
+                  value: profile.address ?? '-',
+                ),
+
+                const SizedBox(height: 22),
+
+                // AKTIVITAS SAYA
+                const Text(
+                  'Aktivitas Saya',
+                  style: TextStyle(
+                    fontSize: 17,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+
+                const SizedBox(height: 12),
+
+                _menuCard(
+                  icon: Icons.shopping_bag_outlined,
+                  title: 'Riwayat Pesanan',
+                  subtitle: 'Lihat daftar pesanan Anda',
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) =>
+                            const OrderHistoryScreen(),
+                      ),
+                    );
+                  },
+                ),
+
+                _menuCard(
+                  icon: Icons.shopping_cart_outlined,
+                  title: 'Keranjang',
+                  subtitle: 'Lihat produk dalam keranjang',
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const CartScreen(),
+                      ),
+                    );
+                  },
+                ),
+
+                const SizedBox(height: 22),
+
+                // FEEDBACK DI BAGIAN PALING BAWAH
+                const Text(
+                  'Masukan dan Saran',
+                  style: TextStyle(
+                    fontSize: 17,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+
+                const SizedBox(height: 12),
+
+                _menuCard(
+                  icon: Icons.rate_review_outlined,
+                  title: 'Berikan Feedback',
+                  subtitle: 'Sampaikan kritik dan saran untuk ApoTech',
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const FeedbackScreen(),
+                      ),
+                    );
+                  },
+                ),
+
+                const SizedBox(height: 20),
+              ],
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  // KARTU INFORMASI AKUN
+  Widget _infoCard({
+    required IconData icon,
+    required String title,
+    required String value,
+  }) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(14),
+      ),
+      child: Row(
+        children: [
+          Icon(
+            icon,
+            color: primaryColor,
+            size: 23,
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Colors.grey.shade600,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  value,
+                  style: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // KARTU MENU
+  Widget _menuCard({
+    required IconData icon,
+    required String title,
+    required String subtitle,
+    required VoidCallback onTap,
+  }) {
+    return Card(
+      color: Colors.white,
+      elevation: 0,
+      margin: const EdgeInsets.only(bottom: 10),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(14),
+      ),
+      child: ListTile(
+        leading: Icon(
+          icon,
+          color: primaryColor,
+        ),
+        title: Text(
+          title,
+          style: const TextStyle(
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        subtitle: Text(subtitle),
+        trailing: const Icon(Icons.chevron_right),
+        onTap: onTap,
+      ),
+    );
+  }
+}
+
+
+========================================
+FILE: C:\Users\putu\Desktop\project flutter\apotech_flutter_uts\lib\services\feedback_service.dart
+========================================
+import 'package:supabase_flutter/supabase_flutter.dart';
+
+class FeedbackService {
+  final SupabaseClient _client = Supabase.instance.client;
+
+  Future<void> submitFeedback({
+    required String? customerId,
+    required String? fullName,
+    required int rating,
+    required String message,
+  }) async {
+    await _client.from('feedback').insert({
+      'customer_id': customerId,
+      'full_name': fullName,
+      'rating': rating,
+      'message': message.trim(),
+    });
+  }
+}
+
+
+========================================
+FILE: C:\Users\putu\Desktop\project flutter\apotech_flutter_uts\lib\services\local_medicine_service.dart
+========================================
 
 import '../models/medicine.dart';
 
@@ -4128,9 +5854,10 @@ class LocalMedicineService {
   }
 }
 
-==================================================
-FILE: lib\services\openfda_inventory_service.dart
-==================================================
+
+========================================
+FILE: C:\Users\putu\Desktop\project flutter\apotech_flutter_uts\lib\services\openfda_inventory_service.dart
+========================================
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../models/openfda_product.dart';
@@ -4174,9 +5901,10 @@ class OpenFdaInventoryService {
   }
 }
 
-==================================================
-FILE: lib\services\openfda_service.dart
-==================================================
+
+========================================
+FILE: C:\Users\putu\Desktop\project flutter\apotech_flutter_uts\lib\services\openfda_service.dart
+========================================
 
 import 'dart:convert';
 
@@ -4221,9 +5949,10 @@ class OpenFdaService {
   }
 }
 
-==================================================
-FILE: lib\services\order_service.dart
-==================================================
+
+========================================
+FILE: C:\Users\putu\Desktop\project flutter\apotech_flutter_uts\lib\services\order_service.dart
+========================================
 
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -4234,6 +5963,7 @@ class OrderService {
 
   Future<Map<String, dynamic>> createOrder({
     required CartProvider cart,
+    required DateTime pickupDate,
   }) async {
     if (cart.isEmpty || cart.pharmacyId == null) {
       throw Exception('Keranjang masih kosong.');
@@ -4245,6 +5975,7 @@ class OrderService {
           'pharmacy_id': cart.pharmacyId,
           'total_price': cart.totalPrice,
           'order_status': 'pending',
+          'pickup_at': pickupDate.toUtc().toIso8601String(),
         })
         .select()
         .single();
@@ -4262,9 +5993,7 @@ class OrderService {
         };
       }).toList();
 
-      await _supabase
-          .from('order_items')
-          .insert(orderItems);
+      await _supabase.from('order_items').insert(orderItems);
 
       return order;
     } catch (error) {
@@ -4278,128 +6007,125 @@ class OrderService {
   }
 
   Future<List<Map<String, dynamic>>> getOrders() async {
-    final response = await _supabase
-        .from('orders')
-        .select('''
-          id,
-          pharmacy_id,
-          total_price,
-          order_status,
-          created_at,
-          pharmacies (
-            name,
-            address
-          ),
-          order_items (
-            id,
-            medicine_id,
-            quantity,
-            unit_price,
-            subtotal,
-            medicines (
-              name,
-              category,
-              packaging
-            )
-          )
-        ''')
-        .order('created_at', ascending: false);
+    final response = await _supabase.from('orders').select('''
+      id,
+      pharmacy_id,
+      total_price,
+      order_status,
+      created_at,
+      pickup_at,
+      pharmacies (
+        name,
+        address
+      ),
+      order_items (
+        id,
+        medicine_id,
+        quantity,
+        unit_price,
+        subtotal,
+        medicines (
+          name,
+          category,
+          packaging
+        )
+      )
+    ''').order('created_at', ascending: false);
 
     return List<Map<String, dynamic>>.from(response);
+  }
+
+  Future<bool> updatePickupDate({
+    required int orderId,
+    required DateTime pickupDate,
+  }) async {
+    final result = await _supabase
+        .from('orders')
+        .update({
+          'pickup_at': pickupDate.toUtc().toIso8601String(),
+        })
+        .eq('id', orderId)
+        .eq('order_status', 'pending')
+        .select('id')
+        .maybeSingle();
+
+    return result != null;
+  }
+
+  Future<bool> cancelOrder(int orderId) async {
+    final result = await _supabase
+        .from('orders')
+        .update({
+          'order_status': 'cancelled',
+        })
+        .eq('id', orderId)
+        .eq('order_status', 'pending')
+        .select('id')
+        .maybeSingle();
+
+    return result != null;
   }
 }
 
 
-===== FILE: pubspec.yaml =====
-name: apotech_flutter_uts
-description: "A new Flutter project."
-# The following line prevents the package from being accidentally published to
-# pub.dev using `flutter pub publish`. This is preferred for private packages.
-publish_to: 'none' # Remove this line if you wish to publish to pub.dev
+========================================
+FILE: C:\Users\putu\Desktop\project flutter\apotech_flutter_uts\lib\services\profile_service.dart
+========================================
 
-# The following defines the version and build number for your application.
-# A version number is three numbers separated by dots, like 1.2.43
-# followed by an optional build number separated by a +.
-# Both the version and the builder number may be overridden in flutter
-# build by specifying --build-name and --build-number, respectively.
-# In Android, build-name is used as versionName while build-number used as versionCode.
-# Read more about Android versioning at https://developer.android.com/studio/publish/versioning
-# In iOS, build-name is used as CFBundleShortVersionString while build-number is used as CFBundleVersion.
-# Read more about iOS versioning at
-# https://developer.apple.com/library/archive/documentation/General/Reference/InfoPlistKeyReference/Articles/CoreFoundationKeys.html
-# In Windows, build-name is used as the major, minor, and patch parts
-# of the product and file versions while build-number is used as the build suffix.
-version: 1.0.0+1
+import 'dart:io';
 
-environment:
-  sdk: ^3.13.2
+import 'package:supabase_flutter/supabase_flutter.dart';
 
-# Dependencies specify other packages that your package needs in order to work.
-# To automatically upgrade your package dependencies to the latest versions
-# consider running `flutter pub upgrade --major-versions`. Alternatively,
-# dependencies can be manually updated by changing the version numbers below to
-# the latest version available on pub.dev. To see which dependencies have newer
-# versions available, run `flutter pub outdated`.
-dependencies:
-  flutter:
-    sdk: flutter
+class ProfileService {
+  final SupabaseClient _client = Supabase.instance.client;
 
-  # The following adds the Cupertino Icons font to your application.
-  # Use with the CupertinoIcons class for iOS style icons.
-  cupertino_icons: ^1.0.8
-  provider: ^6.1.5+1
-  http: ^1.6.0
-  supabase_flutter: ^2.18.3
+  static const String tableName = 'profiles';
+  static const String bucketName = 'profile-photos';
+  static const int profileId = 1;
 
-dev_dependencies:
-  flutter_test:
-    sdk: flutter
+  // Mengambil data profil dummy dengan ID 1.
+  Future<Map<String, dynamic>> getProfile() async {
+    final response = await _client
+        .from(tableName)
+        .select()
+        .eq('id', profileId)
+        .single();
 
-  # The "flutter_lints" package below contains a set of recommended lints to
-  # encourage good coding practices. The lint set provided by the package is
-  # activated in the `analysis_options.yaml` file located at the root of your
-  # package. See that file for information about deactivating specific lint
-  # rules and activating additional ones.
-  flutter_lints: ^6.0.0
+    return response;
+  }
 
-# For information on the generic Dart part of this file, see the
-# following page: https://dart.dev/tools/pub/pubspec
+  // Memperbarui informasi profil.
+  Future<void> updateProfile(Map<String, dynamic> data) async {
+    await _client.from(tableName).update({
+      ...data,
+      'updated_at': DateTime.now().toUtc().toIso8601String(),
+    }).eq('id', profileId);
+  }
 
-# The following section is specific to Flutter packages.
-flutter:
+  // Mengunggah foto profil ke Supabase Storage.
+  Future<String> uploadProfilePhoto(File imageFile) async {
+    final extension = imageFile.path.split('.').last.toLowerCase();
 
-  # The following line ensures that the Material Icons font is
-  # included with your application, so that you can use the icons in
-  # the material Icons class.
-  uses-material-design: true
+    final contentType = switch (extension) {
+      'png' => 'image/png',
+      'webp' => 'image/webp',
+      'jpg' || 'jpeg' => 'image/jpeg',
+      'jfif' => 'image/jpeg',
+      _ => 'application/octet-stream',
+    };
 
-  # To add assets to your application, add an assets section, like this:
-  # assets:
-  #   - images/a_dot_burr.jpeg
-  #   - images/a_dot_ham.jpeg
+    final fileName =
+        'profile_$profileId.${DateTime.now().millisecondsSinceEpoch}.$extension';
 
-  # An image asset can refer to one or more resolution-specific "variants", see
-  # https://flutter.dev/to/resolution-aware-images
+    await _client.storage.from(bucketName).upload(
+      fileName,
+      imageFile,
+      fileOptions: FileOptions(
+        contentType: contentType,
+        upsert: true,
+      ),
+    );
 
-  # For details regarding adding assets from package dependencies, see
-  # https://flutter.dev/to/asset-from-package
-
-  # To add custom fonts to your application, add a fonts section here,
-  # in this "flutter" section. Each entry in this list should have a
-  # "family" key with the font family name, and a "fonts" key with a
-  # list giving the asset and other descriptors for the font. For
-  # example:
-  # fonts:
-  #   - family: Schyler
-  #     fonts:
-  #       - asset: fonts/Schyler-Regular.ttf
-  #       - asset: fonts/Schyler-Italic.ttf
-  #         style: italic
-  #   - family: Trajan Pro
-  #     fonts:
-  #       - asset: fonts/TrajanPro.ttf
-  #       - asset: fonts/TrajanPro_Bold.ttf
-  #         weight: 700
-  #
-  # For details regarding fonts from package dependencies,
-  # see https://flutter.dev/to/font-from-package
+    return _client.storage.from(bucketName).getPublicUrl(fileName);
+  }
+}

@@ -1,10 +1,8 @@
 
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 
 import '../../constants/app_theme.dart';
 import '../../models/openfda_product.dart';
-import '../../providers/favorite_provider.dart';
 
 class OpenFdaProductDetailScreen extends StatelessWidget {
   final OpenFdaProduct product;
@@ -101,184 +99,138 @@ class OpenFdaProductDetailScreen extends StatelessWidget {
       appBar: AppBar(
         title: const Text('Detail Produk'),
       ),
-      body: Consumer<FavoriteProvider>(
-        builder: (context, favoriteProvider, child) {
-          final isFavorite =
-              favoriteProvider.isFavorite(product);
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Center(
+              child: Container(
+                width: 100,
+                height: 100,
+                decoration: BoxDecoration(
+                  color: AppTheme.blueAccent,
+                  borderRadius: BorderRadius.circular(24),
+                ),
+                child: const Icon(
+                  Icons.medication_outlined,
+                  size: 55,
+                  color: AppTheme.primaryColor,
+                ),
+              ),
+            ),
+            const SizedBox(height: 20),
+            Center(
+              child: Text(
+                _displayValue(displayName),
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  fontSize: 22,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+            const SizedBox(height: 8),
+            const Center(
+              child: Chip(
+                label: Text('Data OpenFDA'),
+                backgroundColor: AppTheme.blueAccent,
+              ),
+            ),
+            const SizedBox(height: 28),
 
-          return SingleChildScrollView(
-            padding: const EdgeInsets.all(20),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Center(
-                  child: Container(
-                    width: 100,
-                    height: 100,
-                    decoration: BoxDecoration(
-                      color: AppTheme.blueAccent,
-                      borderRadius: BorderRadius.circular(24),
-                    ),
-                    child: const Icon(
-                      Icons.medication_outlined,
-                      size: 55,
-                      color: AppTheme.primaryColor,
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 20),
-                Center(
-                  child: Text(
-                    _displayValue(displayName),
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(
-                      fontSize: 22,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 8),
-                const Center(
-                  child: Chip(
-                    label: Text('Data OpenFDA'),
-                    backgroundColor: AppTheme.blueAccent,
-                  ),
-                ),
+            _buildSectionTitle('Informasi Produk'),
+            const Divider(),
 
-                const SizedBox(height: 16),
+            _buildInfoRow(
+              'Nama merek',
+              _displayValue(product.brandName),
+            ),
+            _buildInfoRow(
+              'Nama generik',
+              _displayValue(product.genericName),
+            ),
+            _buildInfoRow(
+              'Produsen',
+              _displayValue(product.manufacturer),
+            ),
+            _buildInfoRow(
+              'Bentuk sediaan',
+              _displayValue(product.dosageForm),
+            ),
+            _buildInfoRow(
+              'Jenis produk',
+              _displayValue(product.productType),
+            ),
+            _buildInfoRow(
+              'NDC',
+              _displayValue(product.productNdc),
+            ),
 
-                // Tombol bintang Produk Tersimpan
-                SizedBox(
-                  width: double.infinity,
-                  child: OutlinedButton.icon(
-                    onPressed: product.productNdc.isEmpty
-                        ? null
-                        : () {
-                            favoriteProvider.toggleFavorite(
-                              product,
-                            );
+            const Divider(),
+            const SizedBox(height: 20),
 
-                            ScaffoldMessenger.of(context)
-                              ..hideCurrentSnackBar()
-                              ..showSnackBar(
-                                SnackBar(
-                                  content: Text(
-                                    isFavorite
-                                        ? 'Produk dihapus dari tersimpan.'
-                                        : 'Produk berhasil disimpan.',
-                                  ),
-                                ),
-                              );
-                          },
-                    icon: Icon(
-                      isFavorite
-                          ? Icons.star
-                          : Icons.star_border,
-                      color: isFavorite
-                          ? Colors.amber.shade700
-                          : AppTheme.primaryColor,
-                    ),
-                    label: Text(
-                      isFavorite
-                          ? 'Hapus dari Produk Tersimpan'
-                          : 'Simpan Produk',
-                    ),
-                  ),
-                ),
+            _buildListInfo(
+              'Bahan Aktif',
+              product.activeIngredients,
+            ),
+            _buildListInfo(
+              'Rute Penggunaan',
+              product.routes,
+            ),
 
-                const SizedBox(height: 28),
+            _buildSectionTitle('Ketersediaan ApoTech'),
+            const Divider(),
 
-                _buildSectionTitle('Informasi Produk'),
-                const Divider(),
-                _buildInfoRow(
-                  'Nama merek',
-                  _displayValue(product.brandName),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.orange.withValues(alpha: 0.08),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: Colors.orange.withValues(alpha: 0.3),
                 ),
-                _buildInfoRow(
-                  'Nama generik',
-                  _displayValue(product.genericName),
-                ),
-                _buildInfoRow(
-                  'Produsen',
-                  _displayValue(product.manufacturer),
-                ),
-                _buildInfoRow(
-                  'Bentuk sediaan',
-                  _displayValue(product.dosageForm),
-                ),
-                _buildInfoRow(
-                  'Jenis produk',
-                  _displayValue(product.productType),
-                ),
-                _buildInfoRow(
-                  'NDC',
-                  _displayValue(product.productNdc),
-                ),
-                const Divider(),
-                const SizedBox(height: 20),
-
-                _buildListInfo(
-                  'Bahan Aktif',
-                  product.activeIngredients,
-                ),
-                _buildListInfo(
-                  'Rute Penggunaan',
-                  product.routes,
-                ),
-
-                _buildSectionTitle('Ketersediaan ApoTech'),
-                const Divider(),
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: Colors.orange.withValues(alpha: 0.08),
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(
-                      color: Colors.orange.withValues(alpha: 0.3),
-                    ),
-                  ),
-                  child: const Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+              ),
+              child: const Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
                     children: [
-                      Row(
-                        children: [
-                          Icon(
-                            Icons.inventory_2_outlined,
-                            color: Colors.orange,
-                          ),
-                          SizedBox(width: 8),
-                          Text(
-                            'Belum masuk inventaris',
-                            style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ],
+                      Icon(
+                        Icons.inventory_2_outlined,
+                        color: Colors.orange,
                       ),
-                      SizedBox(height: 8),
+                      SizedBox(width: 8),
                       Text(
-                        'Informasi stok dan ketersediaan produk '
-                        'akan dikelola melalui database ApoTech.',
-                        style: TextStyle(fontSize: 13),
+                        'Belum masuk inventaris',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                     ],
                   ),
-                ),
-
-                const SizedBox(height: 20),
-                const Text(
-                  'Sumber informasi: OpenFDA. Data ini merupakan '
-                  'informasi produk dan bukan rekomendasi penggunaan obat.',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: Colors.grey,
+                  SizedBox(height: 8),
+                  Text(
+                    'Informasi stok dan ketersediaan produk '
+                    'akan dikelola melalui database ApoTech.',
+                    style: TextStyle(fontSize: 13),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
-          );
-        },
+
+            const SizedBox(height: 20),
+            const Text(
+              'Sumber informasi: OpenFDA. Data ini merupakan '
+              'informasi produk dan bukan rekomendasi penggunaan obat.',
+              style: TextStyle(
+                fontSize: 12,
+                color: Colors.grey,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
