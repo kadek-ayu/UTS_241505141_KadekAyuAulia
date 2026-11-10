@@ -304,3 +304,90 @@ ApoTech merupakan tahap awal pengembangan sistem informasi apotek berbasis mobil
 Pengembangan aplikasi ini masih memiliki keterbatasan, baik dari segi fitur maupun pengelolaan data. Namun, melalui implementasi Flutter, Provider, REST API OpenFDA, dan Supabase, proyek ini menjadi dasar untuk pengembangan sistem informasi apotek yang lebih lengkap pada tahap berikutnya.
 
 Pengembang berharap ApoTech dapat terus dikembangkan sehingga mampu membantu masyarakat memperoleh informasi obat, mengetahui ketersediaan obat di apotek, serta mempermudah proses pemesanan dan pengambilan obat.
+## 11. Dokumentasi Tampilan Aplikasi
+
+Bagian ini menampilkan dokumentasi antarmuka aplikasi ApoTech berdasarkan halaman dan fitur yang tersedia. Setiap tangkapan layar digunakan untuk memperlihatkan tampilan serta alur penggunaan aplikasi dari perspektif pelanggan.
+
+### 11.1 Halaman Katalog Obat
+
+Halaman katalog obat menampilkan daftar informasi obat yang diperoleh melalui REST API OpenFDA. Pengguna dapat mencari dan melihat informasi obat yang tersedia.
+
+![Halaman Katalog Obat](screenshots/katalog_obat.png)
+
+### 11.2 Halaman Produk Tersimpan
+
+Halaman produk tersimpan menampilkan daftar obat yang telah disimpan oleh pengguna. Pengguna dapat menghapus produk dari daftar tersimpan atau memasukkannya ke keranjang pemesanan.
+
+![Halaman Produk Tersimpan](screenshots/produk_tersimpan.png)
+
+### 11.3 Halaman Keranjang
+
+Halaman keranjang menampilkan daftar obat yang akan dipesan. Pengguna dapat melihat rincian produk, mengatur jumlah obat, dan melanjutkan proses pemesanan.
+
+![Halaman Keranjang](screenshots/keranjang.png)
+
+### 11.4 Halaman Profil Pengguna
+
+Halaman profil pengguna menampilkan informasi akun pelanggan serta beberapa menu yang berkaitan dengan pengelolaan profil dan aktivitas pengguna.
+
+![Halaman Profil Pengguna](screenshots/profil.png)
+
+### 11.5 Halaman Apotek Terdekat
+
+Halaman apotek terdekat menampilkan daftar apotek yang tersedia dalam aplikasi, termasuk informasi nama, alamat, dan jam operasional.
+
+![Halaman Apotek Terdekat](screenshots/apotek_terdekat.png)
+
+### 11.6 Halaman Profil Apotek
+
+Halaman profil apotek menampilkan informasi lebih lanjut mengenai apotek yang dipilih, termasuk informasi apotek dan ketersediaan obat berdasarkan data yang tersimpan.
+
+![Halaman Profil Apotek](screenshots/profil_apotek.png)
+
+### 11.7 Halaman Pesanan Saya
+
+Halaman pesanan saya menampilkan daftar transaksi pemesanan yang telah dibuat pengguna. Informasi yang ditampilkan meliputi rincian pesanan dan status pemesanan.
+
+![Halaman Pesanan Saya](screenshots/pesanan_saya.png)
+
+### 11.8 Halaman Konfirmasi Pesanan
+
+Halaman konfirmasi pesanan digunakan untuk meninjau informasi pemesanan sebelum pengguna menyelesaikan proses pemesanan.
+
+![Halaman Konfirmasi Pesanan](screenshots/konfirmasi_pesanan.png)
+
+### 11.9 Pemilihan Tanggal Pengambilan
+
+Halaman ini menyediakan fitur pemilihan tanggal pengambilan obat. Pengguna dapat menentukan tanggal pengambilan sesuai dengan ketentuan yang diterapkan aplikasi.
+
+![Pemilihan Tanggal Pengambilan](screenshots/konfirmasi_pesanan_tanggal.png)
+
+### 11.10 Pemilihan Jam Pengambilan
+
+Pada bagian ini, pengguna dapat memilih jam pengambilan obat melalui pilihan waktu yang tersedia dalam aplikasi.
+
+![Pemilihan Jam Pengambilan](screenshots/konfirmasi_pesanan_jam.png)
+
+### 11.11 Ringkasan Konfirmasi Pesanan
+
+Halaman ini menampilkan ringkasan informasi pesanan, seperti apotek yang dipilih, tanggal dan jam pengambilan, rincian obat, serta total pembayaran sebelum pesanan dikonfirmasi.
+
+![Ringkasan Konfirmasi Pesanan](screenshots/konfirmasi_pesanan_utama.png)
+
+### 11.12 Halaman Pesanan Berhasil Dibuat
+
+Halaman ini menampilkan pemberitahuan bahwa proses pemesanan berhasil dilakukan. Pengguna dapat melihat informasi bahwa pesanan telah berhasil dibuat.
+
+![Pesanan Berhasil Dibuat](screenshots/pesanan_berhasil.png)
+
+### 11.13 Halaman Feedback
+
+Halaman feedback menyediakan formulir bagi pengguna untuk memberikan penilaian, masukan, maupun tanggapan terhadap aplikasi ApoTech.
+
+![Halaman Feedback](screenshots/feedback.png)
+
+### 11.14 Halaman Homepage
+
+Halaman homepage merupakan halaman utama aplikasi ApoTech yang menyediakan akses menuju berbagai fitur utama, seperti katalog obat, produk tersimpan, apotek terdekat, dan menu lainnya.
+
+![Halaman Homepage](screenshots/homepage.png)
