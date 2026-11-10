@@ -391,3 +391,9 @@ Halaman feedback menyediakan formulir bagi pengguna untuk memberikan penilaian, 
 Halaman homepage merupakan halaman utama aplikasi ApoTech yang menyediakan akses menuju berbagai fitur utama, seperti katalog obat, produk tersimpan, apotek terdekat, dan menu lainnya.
 
 ![Halaman Homepage](screenshots/homepage.png)
+
+### 15. Halaman Edit Profil
+
+Halaman Edit Profil merupakan fitur yang memungkinkan pengguna untuk memperbarui informasi data pribadi yang tersimpan pada aplikasi ApoTech. Pengguna dapat mengubah nama, nomor telepon, dan alamat email melalui kolom yang tersedia. Setelah melakukan perubahan, pengguna dapat menekan tombol simpan untuk memperbarui informasi profil. Sistem juga dilengkapi dengan validasi input untuk memastikan data yang dimasukkan sesuai dengan ketentuan.
+
+![Halaman Edit Profil](screenshots/edit_profile.png)
